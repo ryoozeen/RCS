@@ -1,0 +1,150 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ========================= -->
+    <!--    Tesla 기본 Brush들      -->
+    <!-- ========================= -->
+    <Color x:Key="TeslaAccentColor">#60d764</Color>
+
+    <SolidColorBrush x:Key="TeslaBg" Color="#111111"/>
+    <SolidColorBrush x:Key="TeslaBox" Color="#222222"/>
+    <SolidColorBrush x:Key="TeslaPrimaryText" Color="White"/>
+    <SolidColorBrush x:Key="TeslaSecondaryText" Color="#CCCCCC"/>
+    <SolidColorBrush x:Key="TeslaHintText" Color="#777777"/>
+    <SolidColorBrush x:Key="TeslaAccent" Color="{StaticResource TeslaAccentColor}"/>
+
+
+    <!-- ========================= -->
+    <!--   페이지 기본 배경 스타일   -->
+    <!-- ========================= -->
+    <!-- 필요하면 Page에서 Style 사용 가능 -->
+    <Style x:Key="TeslaPage" TargetType="Page">
+        <Setter Property="Background" Value="{StaticResource TeslaBg}"/>
+    </Style>
+
+
+    <!-- ========================= -->
+    <!--   제목 / 서브텍스트 스타일  -->
+    <!-- ========================= -->
+    <Style x:Key="TeslaTitle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource TeslaPrimaryText}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="TeslaSubText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource TeslaSecondaryText}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+
+    <!-- ========================= -->
+    <!--       기본 버튼 스타일      -->
+    <!-- ========================= -->
+    <Style TargetType="Button">
+        <Setter Property="Height" Value="55"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="Foreground" Value="{StaticResource TeslaPrimaryText}"/>
+        <Setter Property="Background" Value="#2b2b2b"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Margin" Value="0,8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="10">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <!-- Hover -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#3d3d3d"/>
+                        </Trigger>
+                        <!-- Pressed -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#1f1f1f"/>
+                        </Trigger>
+                        <!-- Disabled -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.4"/>
+                            <Setter Property="Foreground" Value="#777777"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- ========================= -->
+    <!--     TextBox (Placeholder) -->
+    <!-- ========================= -->
+    <Style TargetType="TextBox">
+        <Setter Property="Height" Value="45"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Background" Value="{StaticResource TeslaBox}"/>
+        <Setter Property="Foreground" Value="{StaticResource TeslaPrimaryText}"/>
+        <Setter Property="BorderBrush" Value="#444"/>
+        <Setter Property="BorderThickness" Value="1.2"/>
+        <Setter Property="Padding" Value="12"/>
+        <Setter Property="Margin" Value="0,8"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Border x:Name="Bd"
+                                CornerRadius="8"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"/>
+
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="6,0,0,0"/>
+
+                        <!-- Placeholder: Tag 속성 사용 -->
+                        <TextBlock x:Name="Placeholder"
+                                   Text="{TemplateBinding Tag}"
+                                   Foreground="{StaticResource TeslaHintText}"
+                                   Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <!-- Text가 비었을 때 Placeholder 보이기 -->
+                        <Trigger Property="Text" Value="">
+                            <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+
+                        <!-- 포커스 시 테두리 초록 -->
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource TeslaAccent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- ========================= -->
+    <!--   원형 아이콘 박스 스타일   -->
+    <!-- ========================= -->
+    <Style x:Key="TeslaIconBox" TargetType="Border">
+        <Setter Property="Width" Value="70"/>
+        <Setter Property="Height" Value="70"/>
+        <Setter Property="CornerRadius" Value="35"/>
+        <Setter Property="Background" Value="{StaticResource TeslaBox}"/>
+        <Setter Property="Margin" Value="10"/>
+    </Style>
+
+</ResourceDictionary>

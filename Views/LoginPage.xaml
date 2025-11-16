@@ -1,0 +1,37 @@
+﻿<Page x:Class="DotBotCarClient.Views.LoginPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="#111111">
+
+    <Grid Margin="30">
+
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Width="320">
+
+            <!-- TITLE -->
+            <TextBlock Text="DOTBOT LOGIN"
+                       Style="{StaticResource TeslaTitle}"
+                       Margin="0,0,0,25"/>
+
+            <!-- ID -->
+            <TextBox x:Name="txtId"
+                     Tag="ID" />
+
+            <!-- PASSWORD -->
+            <TextBox x:Name="txtPw"
+                     Tag="Password"
+                     Margin="0,0,0,25" />
+
+            <!-- LOGIN BUTTON -->
+            <Button Content="로그인"
+                    Click="BtnLogin_Click" />
+
+            <!-- ENROLL BUTTON -->
+            <Button Content="회원가입"
+                    Click="BtnEnroll_Click" />
+
+        </StackPanel>
+
+    </Grid>
+</Page>
