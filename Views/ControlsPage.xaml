@@ -3,120 +3,181 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:av="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="av" x:Class="DotBotCarClient.Views.ControlsPage"
       Style="{StaticResource TeslaPage}"
-      Title="ControlsPage" av:DesignHeight="644">
+      Title="ControlsPage" av:DesignHeight="619" av:DesignWidth="401">
 
-    <Grid>
+    <Grid x:Name="RootGrid" Margin="-15,0,-2,0">
+
+        <Grid.RenderTransform>
+            <TranslateTransform X="40"/>
+        </Grid.RenderTransform>
+
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.4"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                         From="40" To="0" Duration="0:0:0.4"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" MinHeight="67"/>
+            <RowDefinition/>
+            <RowDefinition Height="151"/>
+            <RowDefinition Height="7"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="20, 20, 20, 0">
-            <Button x:Name="BackBtn" Click="Back_Click" HorizontalAlignment="Left"
-                    Background="Transparent" BorderThickness="0" Width="40" Height="40">
-                <TextBlock Text="&lt;" FontSize="24" Foreground="{StaticResource TeslaSecondaryText}"/>
+        <!-- 상단 -->
+        <Grid Grid.Row="0" Margin="20,20,20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50"/>
+                <!-- Back 버튼 영역 -->
+                <ColumnDefinition/>
+                <!-- Title 가운데 -->
+                <ColumnDefinition Width="50"/>
+                <!-- 빈 영역 -->
+            </Grid.ColumnDefinitions>
+
+            <!-- 🔙 Back Button -->
+            <Button Grid.Column="0"
+            x:Name="BackBtn"
+            Click="Back_Click"
+            Width="40"
+            Height="40"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Panel.ZIndex="10">
+                <!-- ← 클릭 우선! -->
+                <TextBlock Text="&lt;"
+                   FontSize="20"
+                   Foreground="{StaticResource TeslaSecondaryText}"/>
             </Button>
-            <TextBlock Text="CONTROLS" Style="{StaticResource TeslaTitle}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+            <!-- 📌 Center Title -->
+            <TextBlock Grid.Column="1"
+               Text="CONTROLS"
+               Style="{StaticResource TeslaTitle}"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"/>
         </Grid>
 
-        <Grid Grid.Row="1" VerticalAlignment="Top" Margin="0, 30, 0, 0">
+        <!-- 온도 -->
+        <Grid Grid.Row="1" VerticalAlignment="Top" Margin="0,40,0,0" Height="67">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="-" Click="DecreaseTemp_Click" Width="50" Height="50"
-                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
-                    Background="{StaticResource TeslaBox}" Style="{StaticResource {x:Type Button}}"/>
+            <Button Grid.Column="0" Content="–"
+                    Width="50" Height="50"
+                    Click="DecreaseTemp_Click"
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"/>
 
-            <TextBlock x:Name="TargetTempText" Grid.Column="1" Text="22°C" Style="{StaticResource TeslaTitle}"
-                       FontSize="50" VerticalAlignment="Center"/>
+            <TextBlock x:Name="TargetTempText"
+                       Grid.Column="1"
+                       Text="22°C"
+                       Style="{StaticResource TeslaTitle}"
+                       FontSize="50"
+                       VerticalAlignment="Center"/>
 
-            <Button Grid.Column="2" Content="+" Click="IncreaseTemp_Click" Width="50" Height="50"
-                    HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"
-                    Background="{StaticResource TeslaBox}" Style="{StaticResource {x:Type Button}}"/>
+            <Button Grid.Column="2" Content="+"
+                    Width="50" Height="50"
+                    Click="IncreaseTemp_Click"
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Left"/>
         </Grid>
 
-        <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,150,0,0"
-              Width="294" Height="261" Grid.RowSpan="2">
+        <!-- 아이콘 4개 -->
+        <Grid Grid.Row="1"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Top"
+              Margin="0,139,0,0"
+              Width="294" Height="259" Grid.RowSpan="2">
+
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
+
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <Border x:Name="AirBtn" Style="{StaticResource TeslaIconBox}" Grid.Row="0" Grid.Column="0">
-                <Button Click="Air_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="{x:Type Button}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
-                    <StackPanel>
-                        <TextBlock Text="❄️" FontSize="28"/>
-                        <TextBlock Text="Air" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+            <!-- Air -->
+            <Border x:Name="AirBtn" Style="{StaticResource TeslaIconBox}"
+                    Grid.Row="0" Grid.Column="0">
+                <Button Click="Air_Click" Background="Transparent" BorderBrush="Transparent">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="/Assets/air.png" Width="46"/>
+                        <TextBlock Text="Air"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
 
-            <Border x:Name="HeatBtn" Style="{StaticResource TeslaIconBox}" Grid.Row="0" Grid.Column="1">
-                <Button Click="Heat_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="{x:Type Button}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
-                    <StackPanel>
-                        <TextBlock Text="🔥" FontSize="28"/>
-                        <TextBlock Text="Heat" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+            <!-- Heat -->
+            <Border x:Name="HeatBtn" Style="{StaticResource TeslaIconBox}"
+                    Grid.Row="0" Grid.Column="1">
+                <Button Click="Heat_Click" Background="Transparent" BorderBrush="Transparent">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="/Assets/heat.png" Width="46"/>
+                        <TextBlock Text="Heat"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
 
-            <Border x:Name="LightBtn" Style="{StaticResource TeslaIconBox}" Grid.Row="1" Grid.Column="0">
-                <Button Click="Light_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="{x:Type Button}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
-                    <StackPanel>
-                        <TextBlock Text="💡" FontSize="28"/>
-                        <TextBlock Text="Light" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+            <!-- Light -->
+            <Border x:Name="LightBtn" Style="{StaticResource TeslaIconBox}"
+                    Grid.Row="1" Grid.Column="0">
+                <Button Click="Light_Click" Background="Transparent" BorderBrush="Transparent">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="/Assets/light.png" Width="46"/>
+                        <TextBlock Text="Light"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
 
-            <Border x:Name="HornBtn" Style="{StaticResource TeslaIconBox}" Grid.Row="1" Grid.Column="1">
-                <Button Click="Horn_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="{x:Type Button}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
-                    <StackPanel>
-                        <TextBlock Text="🔊" FontSize="28"/>
-                        <TextBlock Text="Horn" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+            <!-- Horn -->
+            <Border x:Name="HornBtn" Style="{StaticResource TeslaIconBox}"
+                    Grid.Row="1" Grid.Column="1">
+                <Button Click="Horn_Click" Background="Transparent" BorderBrush="Transparent">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="/Assets/horn.png" Width="46"/>
+                        <TextBlock Text="Horn"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
         </Grid>
 
-        <StackPanel Grid.Row="2" Margin="30, 20, 30, 40">
-            <Grid Margin="0, 0, 0, 20">
-                <TextBlock Text="Valet Mode" Style="{StaticResource TeslaSubText}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+        <!-- 하단 Valet / Drive / Park -->
+        <StackPanel Grid.Row="2" Margin="30,20,30,33">
+
+            <Grid Margin="0,0,0,20">
+                <TextBlock Text="Valet Mode"
+                           Style="{StaticResource TeslaSubText}"
+                           HorizontalAlignment="Left"/>
 
                 <ToggleButton x:Name="ValetToggle"
-                              Checked="ValetToggle_Checked"
-                              Unchecked="ValetToggle_Unchecked"
                               HorizontalAlignment="Right"
-                              Width="60" Height="30"
-                              Style="{StaticResource TeslaToggleSwitch}"/>
+                              Style="{StaticResource TeslaToggleSwitch}"
+                              Checked="ValetToggle_Checked"
+                              Unchecked="ValetToggle_Unchecked"/>
             </Grid>
 
             <Grid>
@@ -125,12 +186,18 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
 
-                <Button x:Name="DriveBtn" Content="Drive" Click="DriveBtn_Click" Grid.Column="0"
-                        Background="{StaticResource TeslaBox}" Margin="0, 0, 5, 0"/>
+                <Button x:Name="DriveBtn" Content="Drive"
+                        Grid.Column="0"
+                        Click="DriveBtn_Click"
+                        Margin="0,0,9,-50"/>
 
-                <Button x:Name="ParkBtn" Content="Park" Click="ParkBtn_Click" Grid.Column="1"
-                        Background="{StaticResource TeslaBox}" Margin="5, 0, 0, 0"/>
+                <Button x:Name="ParkBtn" Content="Park"
+                        Grid.Column="1"
+                        Click="ParkBtn_Click"
+                        Margin="5,0,0,-51"/>
             </Grid>
+
         </StackPanel>
+
     </Grid>
 </Page>

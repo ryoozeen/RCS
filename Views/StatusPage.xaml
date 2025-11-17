@@ -4,83 +4,190 @@
       Style="{StaticResource TeslaPage}"
       Title="StatusPage">
 
-    <Grid>
+    <Grid x:Name="RootGrid">
+
+        <!-- 페이지 등장 애니메이션 -->
+        <Grid.RenderTransform>
+            <TranslateTransform X="40"/>
+        </Grid.RenderTransform>
+
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.4"/>
+
+                        <DoubleAnimation Storyboard.TargetProperty="(Grid.RenderTransform).(TranslateTransform.X)"
+                                         From="40" To="0" Duration="0:0:0.4"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
+
+
+        <!-- =============================
+             화면 구조
+        ==============================-->
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- Header -->
             <RowDefinition Height="*"/>
+            <!-- Car -->
             <RowDefinition Height="Auto"/>
+            <!-- Controls -->
+            <RowDefinition Height="Auto"/>
+            <!-- Navigation Bar -->
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0, 40, 0, 0">
-            <TextBlock Text="My Model S" Style="{StaticResource TeslaTitle}" Margin="0,0,0,5"/>
-            <TextBlock x:Name="CarStateText" Text="차량 상태 : 대기 중" Style="{StaticResource TeslaSubText}"/>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0, 10, 0, 20">
-                <TextBlock Text="🔋" FontSize="20" VerticalAlignment="Center"/>
-                <TextBlock x:Name="BatteryText" Text=" 70%" FontSize="20" FontWeight="SemiBold"
-                           Foreground="{StaticResource TeslaAccent}" VerticalAlignment="Center"/>
+        <!-- =============================
+             1) HEADER
+        ==============================-->
+        <StackPanel Grid.Row="0"
+                    Margin="20,40,20,10"
+                    HorizontalAlignment="Center">
+
+            <TextBlock Text="My Model S"
+                       Style="{StaticResource TeslaTitle}"
+                       FontSize="34"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock x:Name="CarStateText"
+                       Text="차량 상태 : 대기 중"
+                       Style="{StaticResource TeslaSubText}"
+                       HorizontalAlignment="Center"
+                       Margin="0,3,0,10"/>
+
+
+            <!-- 중앙정렬된 배터리 표시 -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        x:Name="BatteryPanel">
+
+                <Image x:Name="BatteryIcon"
+                       Source="/Assets/battery.png"
+                       Width="28"
+                       Height="28"
+                       Stretch="Uniform"
+                       Margin="0,0,8,0"/>
+
+                <TextBlock x:Name="BatteryText"
+                           Text="70%"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="#4CAF50"
+                           VerticalAlignment="Center"/>
             </StackPanel>
+
         </StackPanel>
 
-        <Image 
-               Source="/Assets/car.png"  Stretch="Uniform" 
-               Margin="20,57,20,123" Grid.RowSpan="2"/>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0, 0, 0, 50">
-            <Border Style="{StaticResource TeslaIconBox}">
-                <Button x:Name="StartBtn" Click="start_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
+
+        <!-- =============================
+             2) CAR IMAGE
+        ==============================-->
+
+        <Border Grid.Row="1"
+                Margin="30,10,30,30"
+                Background="#1A000000"
+                CornerRadius="28"
+                VerticalAlignment="Top">
+
+            <Grid>
+                <Image x:Name="CarImage"
+                       Source="/Assets/car.png"
+                       Stretch="Uniform"
+                       Opacity="0.92"
+                       Margin="-8,40,15,-27"/>
+            </Grid>
+        </Border>
+
+
+
+        <!-- =============================
+             3) CONTROL ICONS (Start/Lock/Trunk)
+        ==============================-->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,20">
+
+            <!-- START -->
+            <Border Style="{StaticResource TeslaIconBox}"
+                    Margin="8">
+                <Button Background="Transparent"
+                        BorderBrush="Transparent"
+                        Click="start_Click">
                     <StackPanel>
-                        <TextBlock Text="⚡" FontSize="28" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Start" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+                        <Image Source="/Assets/start.png" Width="40"/>
+                        <TextBlock Text="Start"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
 
-            <Border Style="{StaticResource TeslaIconBox}">
-                <Button x:Name="LockBtn" Click="Lock_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
+            <!-- LOCK -->
+            <Border Style="{StaticResource TeslaIconBox}"
+                    Margin="8">
+                <Button Background="Transparent"
+                        BorderBrush="Transparent"
+                        Click="Lock_Click">
                     <StackPanel>
-                        <TextBlock Text="🔒" FontSize="28" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Lock" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+                        <Image Source="/Assets/lock.png" Width="40"/>
+                        <TextBlock Text="Lock"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
 
-            <Border Style="{StaticResource TeslaIconBox}">
-                <Button x:Name="TrunkBtn" Click="Trunk_Click" Background="Transparent" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </ControlTemplate>
-                    </Button.Template>
+            <!-- TRUNK -->
+            <Border Style="{StaticResource TeslaIconBox}"
+                    Margin="8">
+                <Button Background="Transparent"
+                        BorderBrush="Transparent"
+                        Click="Trunk_Click">
                     <StackPanel>
-                        <TextBlock Text="📦" FontSize="28" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Trunk" FontSize="12" Foreground="{StaticResource TeslaSecondaryText}"/>
+                        <Image Source="/Assets/trunk.png" Width="40"/>
+                        <TextBlock Text="Trunk"
+                                   Style="{StaticResource TeslaSubText}"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
             </Border>
+
         </StackPanel>
 
-        <Grid Grid.Row="2" Height="60" Background="{StaticResource TeslaBox}">
+
+
+        <!-- =============================
+             4) NAVIGATION BAR
+        ==============================-->
+
+        <Grid Grid.Row="3"
+              Height="60"
+              Background="{StaticResource TeslaBox}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="⚡ Charging" Click="GoCharging"
-                    Background="Transparent" BorderThickness="0" Foreground="{StaticResource TeslaAccent}"/>
+            <Button Grid.Column="0"
+                    Content="⚡ Charging"
+                    Click="GoCharging"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    Foreground="{StaticResource TeslaAccent}"/>
 
-            <Button Grid.Column="1" Content="⚙️ Controls" Click="GoControls"
-                    Background="Transparent" BorderThickness="0" Foreground="{StaticResource TeslaPrimaryText}"/>
+            <Button Grid.Column="1"
+                    Content="⚙️ Controls"
+                    Click="GoControls"
+                    Background="Transparent"
+                    BorderBrush="Transparent"/>
         </Grid>
+
     </Grid>
 </Page>

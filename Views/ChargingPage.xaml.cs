@@ -72,7 +72,7 @@ namespace DotBotCarClient.Views
             MessageBox.Show("충전 중지 (서버 연결 예정)");
         }
 
-        private void GoBack_Click(object sender, RoutedEventArgs e)
+        private void Back_Click(object sender, RoutedEventArgs e)
         {
             NavigationService?.GoBack();
         }

@@ -4,40 +4,82 @@
       Style="{StaticResource TeslaPage}"
       Title="LoginPage">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid x:Name="RootGrid">
 
-        <StackPanel Grid.Row="0" Margin="0, 80, 0, 40">
-            <TextBlock Text="Tesla Mobile App" Style="{StaticResource TeslaTitle}" Margin="0,0,0,5"/>
-            <TextBlock Text="차량 제어를 위해 로그인하세요" Style="{StaticResource TeslaSubText}"/>
-        </StackPanel>
+        <Grid.RenderTransform>
+            <TranslateTransform X="40"/>
+        </Grid.RenderTransform>
 
-        <StackPanel Width="300" VerticalAlignment="Top" Margin="-7,182,7,0" Grid.RowSpan="2">
-            <TextBox Tag="아이디" Style="{StaticResource {x:Type TextBox}}" />
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.4"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(Grid.RenderTransform).(TranslateTransform.X)"
+                                         From="40" To="0" Duration="0:0:0.4"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
 
-            <PasswordBox Tag="비밀번호" Height="45" FontSize="16"
-                         Foreground="{StaticResource TeslaPrimaryText}" Margin="0,8"
-                         Template="{StaticResource PasswordBoxTemplate}"/>
-        </StackPanel>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="2" Margin="30, 0, 30, 40">
-            <Button x:Name="BtnLogin"
-                    Content="로그인"
-                    Click="BtnLogin_Click"
-                    Background="{StaticResource TeslaAccent}"
-                    Foreground="{StaticResource TeslaBg}"
-                    Margin="0, 20">
-            </Button>
+        <Border Grid.Column="1"
+                Background="{StaticResource TeslaBox}"
+                CornerRadius="20"
+                Padding="30"
+                Width="380"
+                Effect="{StaticResource TeslaShadow}">
 
-            <Button x:Name="BtnEnroll"
-                    Content="회원가입"
-                    Click="BtnEnroll_Click"
-                    Background="{StaticResource TeslaBox}"
-                    Foreground="{StaticResource TeslaSecondaryText}"/>
-        </StackPanel>
+            <StackPanel>
+                
+                <TextBlock Text="Tesla Mobile App"
+                           Style="{StaticResource TeslaTitle}"
+                           FontSize="30"/>
+
+                <TextBlock Text="로그인하여 차량을 제어하세요."
+                           Style="{StaticResource TeslaSubText}"
+                           Margin="0,0,0,20"/>
+
+                <TextBlock Text="아이디"/>
+                <TextBox x:Name="txtLoginId"
+                         Height="40"
+                         Padding="10"
+                         Background="#222"
+                         BorderBrush="#444"
+                         Foreground="White"
+                         Margin="0,0,0,12"/>
+
+                <TextBlock Text="비밀번호"/>
+                <PasswordBox x:Name="pwLogin"
+                             Height="40"
+                             Padding="10"
+                             Background="#222"
+                             BorderBrush="#444"
+                             Foreground="White"
+                             Margin="0,0,0,20"/>
+
+                <Button x:Name="BtnLogin"
+                        Content="로그인"
+                        Height="42"
+                        Click="BtnLogin_Click"
+                        Margin="0,0,0,10"/>
+
+                <Button x:Name="BtnEnroll"
+                        Content="회원가입"
+                        Height="40"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        Foreground="{StaticResource TeslaAccent}"
+                        Click="BtnEnroll_Click"/>
+
+            </StackPanel>
+        </Border>
+
     </Grid>
 </Page>

@@ -4,57 +4,189 @@
       Style="{StaticResource TeslaPage}"
       Title="ChargingPage">
 
-    <Grid>
+    <Grid x:Name="RootGrid">
+
+        <!-- 페이지 등장 애니메이션 -->
+        <Grid.RenderTransform>
+            <TranslateTransform X="40"/>
+        </Grid.RenderTransform>
+
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.4"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(Grid.RenderTransform).(TranslateTransform.X)"
+                                         From="40" To="0" Duration="0:0:0.4"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
+
+
+
+        <!-- ============================
+              레이아웃 구성
+        ============================= -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- Header -->
             <RowDefinition Height="*"/>
+            <!-- Main Content -->
             <RowDefinition Height="Auto"/>
+            <!-- Stop Button -->
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="20, 20, 20, 0">
-            <Button x:Name="GoBackBtn" Click="GoBack_Click" HorizontalAlignment="Left"
-                    Background="Transparent" BorderThickness="0" Width="40" Height="40">
-                <TextBlock Text="&lt;" FontSize="24" Foreground="{StaticResource TeslaSecondaryText}"/>
+
+
+        <!-- ============================
+              ⬅ HEADER
+        ============================= -->
+        <Grid Grid.Row="0" Margin="20,20,20,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50"/>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="50"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Back -->
+            <Button Grid.Column="0"
+                    Click="Back_Click"
+                    Width="40" Height="40"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    HorizontalAlignment="Left"
+                    Panel.ZIndex="20">
+
+                <TextBlock Text="&lt;"
+                           FontSize="22"
+                           Foreground="{StaticResource TeslaSecondaryText}"/>
             </Button>
-            <TextBlock Text="CHARGING" Style="{StaticResource TeslaTitle}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+            <!-- Title -->
+            <TextBlock Grid.Column="1"
+                       Text="CHARGING"
+                       Style="{StaticResource TeslaTitle}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
         </Grid>
 
-        <StackPanel Grid.Row="1" VerticalAlignment="Center">
 
-            <TextBlock x:Name="ChargeTimeText" Text="1 hr 5 min remaining" 
-                       Style="{StaticResource TeslaSubText}" 
-                       FontSize="20"
-                       Margin="0, 0, 0, 40"/>
 
-            <Border x:Name="BatteryBorder" Width="300" Height="150" CornerRadius="15" BorderThickness="5"
-                    BorderBrush="{StaticResource TeslaSecondaryText}" HorizontalAlignment="Center" Margin="0, 0, 0, 20">
 
-                <Grid Margin="3">
-                    <Border x:Name="BatteryFill" HorizontalAlignment="Left" Background="{StaticResource TeslaAccent}"
-                            CornerRadius="10" Width="0"/>
-                    <TextBlock Text="⚡" FontSize="40" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TeslaBg}"/>
+        <!-- ============================
+              ⚡ MAIN CONTENT
+        ============================= -->
+        <StackPanel Grid.Row="1"
+                    Margin="40,10,40,20"
+                    HorizontalAlignment="Center">
+
+            <!-- 예상 충전 시간 -->
+            <TextBlock x:Name="EstTimeText"
+                       Text="1 hr 5 min remaining"
+                       FontSize="18"
+                       Foreground="{StaticResource TeslaSecondaryText}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,25"/>
+            <Border Background="#111"
+                    BorderBrush="#6F6F6F"
+                    BorderThickness="3"
+                    CornerRadius="16"
+                    Padding="6"
+                    Height="152"
+                    Width="300"
+                    >
+
+                <Grid>
+                    <Border x:Name="BatteryFill"
+                            Background="#4CAF50"
+                            CornerRadius="10"
+                            HorizontalAlignment="Left"
+                            Width="0"/>
+                    <!-- 서버 연동 후 Width 조절 -->
                 </Grid>
             </Border>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0, 20, 0, 20">
-                <TextBlock Text="⚡" FontSize="18" Foreground="{StaticResource TeslaPrimaryText}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <TextBlock x:Name="ChargingRateText" Text="62 mi/hr" Style="{StaticResource TeslaSubText}" FontSize="16" Margin="0,0,15,0"/>
-                <TextBlock x:Name="VoltageText" Text="220 V" Style="{StaticResource TeslaSubText}" FontSize="16" Margin="0,0,15,0"/>
-                <TextBlock x:Name="AmperageText" Text="80/80 A" Style="{StaticResource TeslaSubText}" FontSize="16"/>
+
+
+            <!-- ============================
+                    초록색 배터리 충전 바
+            ============================= -->
+
+
+
+            <!-- ============================
+                  충전 관련 정보 (3개)
+            ============================= -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,25,0,25">
+
+                <!-- 속도 (mi/hr) -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,25,0">
+                    <TextBlock Text="⚡" FontSize="18" Margin="0,0,4,0"/>
+                    <TextBlock x:Name="ChargeSpeedText"
+                               Text="62 mi/hr"
+                               Style="{StaticResource TeslaSubText}"
+                               FontSize="15"/>
+                </StackPanel>
+
+                <!-- 전압 -->
+                <TextBlock x:Name="ChargeVoltText"
+                           Text="220 V"
+                           Style="{StaticResource TeslaSubText}"
+                           FontSize="15"
+                           Margin="0,0,25,0"/>
+
+                <!-- 전류 -->
+                <TextBlock x:Name="ChargeAmpText"
+                           Text="80/80 A"
+                           Style="{StaticResource TeslaSubText}"
+                           FontSize="15"/>
             </StackPanel>
 
-            <StackPanel Margin="0, 15, 0, 15" HorizontalAlignment="Center">
-                <TextBlock x:Name="BatteryPercentText" Text="Battery: 60%" Style="{StaticResource TeslaTitle}" FontSize="24" Margin="0, 0, 0, 5"/>
-                <TextBlock x:Name="DriveRangeText" Text="주행 가능 거리: 240 km" Style="{StaticResource TeslaSubText}"/>
-            </StackPanel>
 
-            <TextBlock x:Name="ChargeStatusText" Text="충전 중…" Style="{StaticResource TeslaSubText}" Foreground="{StaticResource TeslaAccent}" FontSize="18"/>
 
+            <!-- 배터리 % -->
+            <TextBlock x:Name="BatteryPercentText"
+                       Text="Battery: 60%"
+                       Style="{StaticResource TeslaTitle}"
+                       FontSize="30"
+                       Margin="0,50,0,5"
+                       HorizontalAlignment="Center"/>
+
+            <!-- 주행 가능 거리 -->
+            <TextBlock x:Name="DriveRangeText"
+                       Text="주행 가능 거리: 240 km"
+                       Style="{StaticResource TeslaSubText}"
+                       FontSize="18"
+                       HorizontalAlignment="Center"
+                       Margin="0,30,0,10"/>
+
+            <!-- 충전 중 표기 -->
+            <TextBlock x:Name="ChargeStatusText"
+                       Text="충전 중..."
+                       FontSize="18"
+                       Foreground="#4CAF50"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       Margin="0,25,0,10" Height="20"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Margin="30, 20, 30, 40">
-            <Button x:Name="StopChargingBtn" Content="STOP CHARGING" Click="StopCharging_Click"
-                    Background="{StaticResource TeslaAccent}" Foreground="{StaticResource TeslaBg}" Margin="0"/>
+
+
+        <!-- ============================
+              STOP CHARGING 버튼
+        ============================= -->
+        <StackPanel Grid.Row="2"
+                    Margin="0,0,0,30"
+                    HorizontalAlignment="Center">
+            <Button Content="STOP CHARGING"
+                    Width="260"
+                    Height="48"
+                    Click="StopCharging_Click"/>
         </StackPanel>
+
     </Grid>
 </Page>
