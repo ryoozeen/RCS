@@ -3,37 +3,84 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       Background="#111111">
 
-    <Grid Margin="20">
+    <!-- ============================ -->
+    <!--     🔶  Resources 영역      -->
+    <!-- ============================ -->
+    <Page.Resources>
 
+        <!-- 원형 아이콘 버튼 스타일 (Status 전용) -->
+        <Style x:Key="StatusRoundIconButton" TargetType="Button">
+            <Setter Property="Background" Value="#222222"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Width" Value="90"/>
+            <Setter Property="Height" Value="90"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Circle"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="45"
+                                    Width="{TemplateBinding Width}"
+                                    Height="{TemplateBinding Height}" />
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Circle" Property="Background" Value="#333333"/>
+                            </Trigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Circle" Property="Background" Value="#444444"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+        </Style>
+
+    </Page.Resources>
+
+
+
+    <!-- ============================ -->
+    <!--          🔶 Layout           -->
+    <!-- ============================ -->
+
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-
-        <!-- HEADER + CAR STATUS -->
-        <StackPanel Grid.Row="0" Margin="0,20,0,10" HorizontalAlignment="Center">
+        <!-- ============================ -->
+        <!--          HEADER            -->
+        <!-- ============================ -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,15,0,10">
 
             <TextBlock Text="My Model S"
-                       FontSize="28"
+                       FontSize="30"
                        FontWeight="SemiBold"
                        Foreground="White"
                        HorizontalAlignment="Center"/>
 
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        Margin="0,15,0,0">
-
-                <!-- 배터리 아이콘 -->
-                <Border Width="25" Height="15" CornerRadius="3"
-                        Background="#0CE65C"/>
-
-                <!-- 배터리 퍼센트 -->
+            <!-- 배터리 표시 -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <Border Width="28" Height="16" Background="#4CAF50" CornerRadius="3"/>
                 <TextBlock x:Name="BatteryText"
-                           Text=" 100%"
-                           FontSize="18"
+                           Text=" 60%"
                            Foreground="White"
+                           FontSize="18"
                            Margin="5,0,0,0"/>
             </StackPanel>
 
@@ -41,99 +88,81 @@
             <TextBlock x:Name="CarStateText"
                        Text="차량 상태 : 주차중"
                        FontSize="16"
-                       Foreground="#BBBBBB"
-                       Margin="0,10,0,0"
-                       HorizontalAlignment="Center"/>
-
-            <!-- 차량 이미지 -->
-            <Image Source="/Assets/car.png"
-                   Width="260"
-                   Opacity="0.93"
-                   Margin="0,20,0,0"
-                   HorizontalAlignment="Center"/>
+                       Foreground="#CCCCCC"
+                       Margin="0,15,0,0"/>
         </StackPanel>
 
 
+        <!-- ============================ -->
+        <!--      CAR IMAGE + ICONS       -->
+        <!-- ============================ -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center">
 
+            <!-- 차량 이미지 -->
+            <Image Source="/Assets/car.png"
+                   Width="280" Height="130"
+                   Margin="0,10"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
 
-        <!-- CONTROL ICONS (에어컨, 문잠금, 트렁크) -->
-        <StackPanel Grid.Row="1" VerticalAlignment="Top"
-                    HorizontalAlignment="Center"
-                    Margin="0,25,0,0">
+            <!-- ICON 3개 -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,35,0,0">
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <!-- POWER -->
+                <Button Style="{StaticResource StatusRoundIconButton}"
+                        Margin="10"
+                        Click="start_Click">
+                    <Image Source="/Assets/start.png" Width="42"/>
+                </Button>
 
-                <!-- Air -->
-                <Border Width="70" Height="70"
-                        Background="#222222"
-                        CornerRadius="40"
-                        Margin="10">
-                    <Button Background="Transparent" BorderThickness="0"
-                            Click="AirBtn_Click">
-                        <TextBlock Text="❄"
-                                   FontSize="32"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                    </Button>
-                </Border>
+                <!-- LOCK -->
+                <Button Style="{StaticResource StatusRoundIconButton}"
+                        Margin="10"
+                        Click="Lock_Click">
+                    <Image Source="/Assets/lock.png" Width="42"/>
+                </Button>
 
-                <!-- Door Lock -->
-                <Border Width="70" Height="70"
-                        Background="#222222"
-                        CornerRadius="40"
-                        Margin="10">
-                    <Button Background="Transparent" BorderThickness="0"
-                            Click="LockBtn_Click">
-                        <TextBlock Text="🔒"
-                                   FontSize="30"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                    </Button>
-                </Border>
-
-                <!-- Trunk -->
-                <Border Width="70" Height="70"
-                        Background="#222222"
-                        CornerRadius="40"
-                        Margin="10">
-                    <Button Background="Transparent" BorderThickness="0"
-                            Click="TrunkBtn_Click">
-                        <TextBlock Text="🧳"
-                                   FontSize="30"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                    </Button>
-                </Border>
+                <!-- TRUNK -->
+                <Button Style="{StaticResource StatusRoundIconButton}"
+                        Margin="10"
+                        Click="Trunk_Click">
+                    <Image Source="/Assets/trunk.png" Width="42"/>
+                </Button>
 
             </StackPanel>
 
         </StackPanel>
 
 
+        <!-- ============================ -->
+        <!--         FOOTER BUTTONS       -->
+        <!-- ============================ -->
+        <StackPanel Grid.Row="2" Margin="0,20,0,15">
 
-        <!-- FOOTER BUTTONS -->
-        <StackPanel Grid.Row="2" Margin="0,20,0,20">
+            <!-- CHARGING -->
+            <Border Height="55" Background="#333333" CornerRadius="10"
+                    MouseDown="GoCharging">
+                <TextBlock Text="CHARGING"
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="20"/>
+            </Border>
 
-            <Button Content="CHARGING"
-                    Click="GoCharging"
-                    Height="55"
-                    FontSize="20"
-                    Background="#333333"
-                    Foreground="White"
-                    BorderThickness="0"
-                    Margin="0,0,0,12"/>
+            <!-- CONTROLS -->
+            <Border Height="55" Background="#222222" CornerRadius="10"
+                    Margin="0,12,0,0"
+                    MouseDown="GoControls">
+                <TextBlock Text="CONTROLS"
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="20"/>
+            </Border>
 
-            <Button Content="CONTROLS"
-                    Click="GoControls"
-                    Height="55"
-                    FontSize="20"
-                    Background="#222222"
-                    Foreground="White"
-                    BorderThickness="0"/>
         </StackPanel>
 
     </Grid>
+
 </Page>

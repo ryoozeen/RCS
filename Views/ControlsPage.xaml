@@ -11,144 +11,184 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-
-        <!-- HEADER -->
-        <StackPanel Grid.Row="0" Margin="0,20,0,20" HorizontalAlignment="Center">
-            <TextBlock Text="CONTROLS"
+        <!-- ======================= -->
+        <!--   1. 실내 온도 표시 영역 -->
+        <!-- ======================= -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,20,0,10">
+            <TextBlock x:Name="InteriorTempText"
+                       Text="Interior: 23°C"
                        FontSize="26"
                        FontWeight="SemiBold"
-                       Foreground="White"/>
+                       Foreground="White"
+                       HorizontalAlignment="Center"/>
+
+            <!-- 온도 조절 UI -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+
+                <!-- 감소 버튼 -->
+                <Border Width="45" Height="40" CornerRadius="6"
+                        Background="#222222" Margin="10">
+                    <Border.InputBindings>
+                        <MouseBinding MouseAction="LeftClick" Command="{x:Static ApplicationCommands.NotACommand}" />
+                    </Border.InputBindings>
+
+                    <TextBlock Text="−"
+                               MouseDown="DecreaseTemp_Click"
+                               FontSize="24"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- 목표 온도 표시 -->
+                <TextBlock x:Name="TargetTempText"
+                           Text="22°C"
+                           Foreground="White"
+                           FontSize="22"
+                           VerticalAlignment="Center"/>
+
+                <!-- 증가 버튼 -->
+                <Border Width="45" Height="40" CornerRadius="6"
+                        Background="#222222" Margin="10">
+                    <TextBlock Text="+"
+                               MouseDown="IncreaseTemp_Click"
+                               FontSize="24"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+            </StackPanel>
         </StackPanel>
 
 
 
-        <!-- CENTER AREA -->
-        <StackPanel Grid.Row="1"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Center"
-                    Margin="0,0,0,20">
+        <!-- ======================= -->
+        <!--      2. ICON GRID       -->
+        <!-- ======================= -->
+        <UniformGrid Grid.Row="1" Columns="2" Rows="2"
+                     HorizontalAlignment="Center"
+                     Margin="0,10,0,0" >
 
-            <!-- LOCK button -->
-            <Button Content="LOCK"
-                    x:Name="BtnLock"
-                    Height="55"
-                    Width="260"
-                    Background="#333333"
-                    Foreground="White"
-                    FontSize="18"
-                    BorderThickness="0"
-                    Margin="0,0,0,30"
-                    Click="BtnLock_Click"/>
-
-
-            <!-- Circular icon buttons -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-
-                <!-- FLASH -->
-                <Border Width="70" Height="70" CornerRadius="40"
-                        Background="#222222"
-                        Margin="10">
-                    <Button Background="Transparent"
-                            BorderThickness="0"
-                            Click="BtnFlash_Click">
-                        <TextBlock Text="🔦"
-                                   FontSize="28"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                    </Button>
-                </Border>
-
-                <!-- HONK -->
-                <Border Width="70" Height="70" CornerRadius="40"
-                        Background="#222222"
-                        Margin="10">
-                    <Button Background="Transparent"
-                            BorderThickness="0"
-                            Click="BtnHonk_Click">
-                        <TextBlock Text="📢"
-                                   FontSize="30"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                    </Button>
-                </Border>
-
-                <!-- START -->
-                <Border Width="70" Height="70" CornerRadius="40"
-                        Background="#222222"
-                        Margin="10">
-                    <Button Background="Transparent"
-                            BorderThickness="0"
-                            Click="BtnStart_Click">
-                        <TextBlock Text="⏻"
-                                   FontSize="32"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
-                    </Button>
-                </Border>
-
-            </StackPanel>
-
-
-            <!-- Valet Mode -->
-            <StackPanel Margin="0,40,0,20" HorizontalAlignment="Center">
-
-                <TextBlock Text="VALET MODE"
-                           FontSize="18"
-                           Foreground="#CCCCCC"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,10"/>
-
-                <ToggleButton x:Name="ToggleValet"
-                              Width="60"
-                              Height="30"
-                              BorderThickness="0"
-                              Background="#444"
-                              Foreground="White"
-                              Checked="ToggleValet_Checked"
-                              Unchecked="ToggleValet_Unchecked">
-                    <ToggleButton.Template>
-                        <ControlTemplate TargetType="ToggleButton">
-                            <Border x:Name="SwitchBorder"
-                                    Width="60" Height="30"
-                                    Background="#333"
-                                    CornerRadius="15">
-                                <Grid>
-                                    <Ellipse x:Name="SwitchThumb"
-                                             Width="24" Height="24"
-                                             Fill="White"
-                                             Margin="3,3,33,3"/>
-                                </Grid>
-                            </Border>
-
-                            <ControlTemplate.Triggers>
-                                <!-- ON -->
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="SwitchBorder" Property="Background" Value="#0CE65C"/>
-                                    <Setter TargetName="SwitchThumb" Property="Margin" Value="33,3,3,3"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </ToggleButton.Template>
-                </ToggleButton>
-
-            </StackPanel>
-
-        </StackPanel>
-
-
-
-        <!-- FOOTER BACK BUTTON -->
-        <StackPanel Grid.Row="2" Margin="0,20,0,20">
-            <Button Content="BACK"
-                    Click="GoBack"
-                    Height="55"
+            <!-- AIR -->
+            <Border x:Name="AirBtn"
+                    Width="90" Height="90"
                     Background="#222222"
-                    Foreground="White"
-                    FontSize="20"
-                    BorderThickness="0"/>
+                    CornerRadius="45"
+                    Margin="12"
+                    MouseDown="Air_Click">
+                <Image Source="/Assets/air.png" Width="45" Height="45"/>
+            </Border>
+
+            <!-- HEAT -->
+            <Border x:Name="HeatBtn"
+                    Width="90" Height="90"
+                    Background="#222222"
+                    CornerRadius="45"
+                    Margin="12"
+                    MouseDown="Heat_Click">
+                <Image Source="/Assets/heat.png" Width="45" Height="45"/>
+            </Border>
+
+            <!-- LIGHT -->
+            <Border x:Name="LightBtn"
+                    Width="90" Height="90"
+                    Background="#222222"
+                    CornerRadius="45"
+                    Margin="12"
+                    MouseDown="Light_Click">
+                <Image Source="/Assets/light.png" Width="45" Height="45"/>
+            </Border>
+
+            <!-- HORN -->
+            <Border x:Name="HornBtn"
+                    Width="90" Height="90"
+                    Background="#222222"
+                    CornerRadius="45"
+                    Margin="12"
+                    MouseDown="Horn_Click">
+                <Image Source="/Assets/horn.png" Width="45" Height="45"/>
+            </Border>
+
+        </UniformGrid>
+
+
+
+        <!-- ======================= -->
+        <!--     3. 하단 영역        -->
+        <!-- ======================= -->
+        <StackPanel Grid.Row="2" Margin="0,20,0,10">
+
+            <!-- VALET MODE -->
+            <StackPanel Orientation="Horizontal" Margin="10,10,0,5">
+                <TextBlock Text="VALET MODE"
+                           FontSize="16"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+
+                <ToggleButton x:Name="ValetToggle"
+                              Width="50" Height="22"
+                              Margin="15,0,0,0"
+                              Checked="ValetToggle_Checked"
+                              Unchecked="ValetToggle_Unchecked">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid Width="50" Height="22">
+                                            <Border x:Name="SwitchBackground"
+                                                    Background="#555"
+                                                    CornerRadius="11"/>
+                                            <Ellipse x:Name="SwitchKnob"
+                                                     Fill="White"
+                                                     Width="18" Height="18"
+                                                     Margin="2"/>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="SwitchBackground" Property="Background" Value="#4CAF50"/>
+                                                <Setter TargetName="SwitchKnob" Property="Margin" Value="30,2,0,0"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+            </StackPanel>
+
+            <!-- DRIVE / PARK 버튼 -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+
+                <Border Width="140" Height="55" CornerRadius="10"
+                        Background="#333333" Margin="10"
+                        x:Name="DriveBtn" MouseDown="DriveBtn_Click">
+                    <TextBlock Text="DRIVE" Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" FontSize="18"/>
+                </Border>
+
+                <Border Width="140" Height="55" CornerRadius="10"
+                        Background="#333333" Margin="10"
+                        x:Name="ParkBtn" MouseDown="ParkBtn_Click">
+                    <TextBlock Text="PARK" Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" FontSize="18"/>
+                </Border>
+
+            </StackPanel>
+
+            <!-- BACK -->
+            <Border Height="55" Background="#222" CornerRadius="10"
+                    MouseDown="Back_Click">
+                <TextBlock Text="BACK" Foreground="White"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="20"/>
+            </Border>
+
         </StackPanel>
 
     </Grid>

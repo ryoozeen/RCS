@@ -1,48 +1,115 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace DotBotCarClient.Views
 {
     public partial class ControlsPage : Page
     {
+        private int interiorTemp = 23;
+        private int targetTemp = 22;
+
+        private bool airOn = false;
+        private bool heatOn = false;
+        private bool lightOn = false;
+        private bool hornOn = false;
+        private bool driveOn = false;
+        private bool parkOn = false;
+
         public ControlsPage()
         {
             InitializeComponent();
+            ValetToggle.IsChecked = true;
         }
 
-        private void BtnLock_Click(object sender, RoutedEventArgs e)
+        private Brush OnColor = new SolidColorBrush(Color.FromRgb(76, 175, 80));
+        private Brush OffColor = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+
+        // ================== 온도 조절 ==================
+        private void DecreaseTemp_Click(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show("문 잠금/해제 요청 (서버 연동 예정)");
+            if (targetTemp > 16)
+                targetTemp--;
+
+            TargetTempText.Text = $"{targetTemp}°C";
         }
 
-        private void BtnFlash_Click(object sender, RoutedEventArgs e)
+        private void IncreaseTemp_Click(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show("플래시 요청");
+            if (targetTemp < 30)
+                targetTemp++;
+
+            TargetTempText.Text = $"{targetTemp}°C";
         }
 
-        private void BtnHonk_Click(object sender, RoutedEventArgs e)
+        // ================== 토글 헬퍼 ==================
+        private void ToggleFeature(Border border, ref bool state)
         {
-            MessageBox.Show("경적!");
+            state = !state;
+            border.Background = state ? OnColor : OffColor;
         }
 
-        private void BtnStart_Click(object sender, RoutedEventArgs e)
+        // ================== 아이콘 클릭 ==================
+        private void Air_Click(object sender, MouseButtonEventArgs e)
+            => ToggleFeature(AirBtn, ref airOn);
+
+        private void Heat_Click(object sender, MouseButtonEventArgs e)
+            => ToggleFeature(HeatBtn, ref heatOn);
+
+        private void Light_Click(object sender, MouseButtonEventArgs e)
+            => ToggleFeature(LightBtn, ref lightOn);
+
+        private void Horn_Click(object sender, MouseButtonEventArgs e)
+            => ToggleFeature(HornBtn, ref hornOn);
+
+        // ================== 발렛 모드 ==================
+        private void ValetToggle_Checked(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("시동 ON/OFF 요청");
+            // 발렛모드 ON → Drive & Park 활성화
+            DriveBtn.IsEnabled = true;
+            ParkBtn.IsEnabled = true;
         }
 
-        private void ToggleValet_Checked(object sender, RoutedEventArgs e)
+        private void ValetToggle_Unchecked(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Valet Mode ON");
+            // --------------------------
+            // 발렛모드 OFF → Drive, Park만 OFF
+            // --------------------------
+            driveOn = false;
+            parkOn = false;
+
+            DriveBtn.Background = OffColor;
+            ParkBtn.Background = OffColor;
+
+            // Drive / Park 비활성화
+            DriveBtn.IsEnabled = false;
+            ParkBtn.IsEnabled = false;
         }
 
-        private void ToggleValet_Unchecked(object sender, RoutedEventArgs e)
+        // ================== DRIVE / PARK ==================
+        private void DriveBtn_Click(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show("Valet Mode OFF");
+            if (ValetToggle.IsChecked == true)
+            {
+                DriveBtn.Background = OnColor;
+                ParkBtn.Background = OffColor;
+            }
         }
 
-        private void GoBack(object sender, RoutedEventArgs e)
+        private void ParkBtn_Click(object sender, MouseButtonEventArgs e)
         {
-            NavigationService?.Navigate(new StatusPage());
+            if (ValetToggle.IsChecked == true)
+            {
+                ParkBtn.Background = OnColor;
+                DriveBtn.Background = OffColor;
+            }
+        }
+
+        // ================== BACK ==================
+        private void Back_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigationService?.GoBack();
         }
     }
 }
