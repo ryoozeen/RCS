@@ -74,7 +74,7 @@ namespace DotBotCarClient.Views
 
         private void GoBack_Click(object sender, RoutedEventArgs e)
         {
-            NavigationService.Navigate(new StatusPage());
+            NavigationService?.GoBack();
         }
     }
 }

@@ -1,113 +1,137 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DotBotCarClient.Views
 {
     public partial class ControlsPage : Page
     {
-        private int interiorTemp = 23;
         private int targetTemp = 22;
 
         private bool airOn = false;
         private bool heatOn = false;
         private bool lightOn = false;
         private bool hornOn = false;
+
         private bool driveOn = false;
         private bool parkOn = false;
+
+        private readonly Brush OnColor = new SolidColorBrush(Color.FromRgb(76, 175, 80)); // 초록색
+        private readonly Brush OffColor = new SolidColorBrush(Color.FromRgb(34, 34, 34)); // #222222
 
         public ControlsPage()
         {
             InitializeComponent();
-            ValetToggle.IsChecked = true;
+            UpdateTempUI();
+
+            // ✅ 수정: ControlsPage 처음 진입 시 Drive/Park 버튼 비활성화
+            DriveBtn.IsEnabled = false;
+            ParkBtn.IsEnabled = false;
         }
 
-        private Brush OnColor = new SolidColorBrush(Color.FromRgb(76, 175, 80));
-        private Brush OffColor = new SolidColorBrush(Color.FromRgb(34, 34, 34));
-
-        // ================== 온도 조절 ==================
-        private void DecreaseTemp_Click(object sender, MouseButtonEventArgs e)
+        // ==========================
+        //    🔥 온도 UI 업데이트
+        // ==========================
+        private void UpdateTempUI()
         {
-            if (targetTemp > 16)
-                targetTemp--;
-
             TargetTempText.Text = $"{targetTemp}°C";
         }
 
-        private void IncreaseTemp_Click(object sender, MouseButtonEventArgs e)
+        private void IncreaseTemp_Click(object sender, RoutedEventArgs e)
         {
             if (targetTemp < 30)
+            {
                 targetTemp++;
-
-            TargetTempText.Text = $"{targetTemp}°C";
+                UpdateTempUI();
+            }
         }
 
-        // ================== 토글 헬퍼 ==================
-        private void ToggleFeature(Border border, ref bool state)
+        private void DecreaseTemp_Click(object sender, RoutedEventArgs e)
         {
-            state = !state;
-            border.Background = state ? OnColor : OffColor;
+            if (targetTemp > 16)
+            {
+                targetTemp--;
+                UpdateTempUI();
+            }
         }
 
-        // ================== 아이콘 클릭 ==================
-        private void Air_Click(object sender, MouseButtonEventArgs e)
-            => ToggleFeature(AirBtn, ref airOn);
 
-        private void Heat_Click(object sender, MouseButtonEventArgs e)
-            => ToggleFeature(HeatBtn, ref heatOn);
+        // ==========================
+        //    🔥 아이콘 버튼들
+        // ==========================
+        private void Air_Click(object sender, RoutedEventArgs e)
+        {
+            airOn = !airOn;
+            AirBtn.Background = airOn ? OnColor : OffColor;
+        }
 
-        private void Light_Click(object sender, MouseButtonEventArgs e)
-            => ToggleFeature(LightBtn, ref lightOn);
+        private void Heat_Click(object sender, RoutedEventArgs e)
+        {
+            heatOn = !heatOn;
+            HeatBtn.Background = heatOn ? OnColor : OffColor;
+        }
 
-        private void Horn_Click(object sender, MouseButtonEventArgs e)
-            => ToggleFeature(HornBtn, ref hornOn);
+        private void Light_Click(object sender, RoutedEventArgs e)
+        {
+            lightOn = !lightOn;
+            LightBtn.Background = lightOn ? OnColor : OffColor;
+        }
 
-        // ================== 발렛 모드 ==================
+        private void Horn_Click(object sender, RoutedEventArgs e)
+        {
+            hornOn = !hornOn;
+            HornBtn.Background = hornOn ? OnColor : OffColor;
+        }
+
+
+        // ==========================
+        //    🔥 발렛 모드
+        // ==========================
         private void ValetToggle_Checked(object sender, RoutedEventArgs e)
         {
-            // 발렛모드 ON → Drive & Park 활성화
             DriveBtn.IsEnabled = true;
             ParkBtn.IsEnabled = true;
         }
 
         private void ValetToggle_Unchecked(object sender, RoutedEventArgs e)
         {
-            // --------------------------
-            // 발렛모드 OFF → Drive, Park만 OFF
-            // --------------------------
             driveOn = false;
             parkOn = false;
 
             DriveBtn.Background = OffColor;
             ParkBtn.Background = OffColor;
 
-            // Drive / Park 비활성화
             DriveBtn.IsEnabled = false;
             ParkBtn.IsEnabled = false;
         }
 
-        // ================== DRIVE / PARK ==================
-        private void DriveBtn_Click(object sender, MouseButtonEventArgs e)
+
+        // ==========================
+        //    🔥 Drive / Park 버튼
+        // ==========================
+        private void DriveBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (ValetToggle.IsChecked == true)
-            {
-                DriveBtn.Background = OnColor;
-                ParkBtn.Background = OffColor;
-            }
+            if (ValetToggle.IsChecked != true)
+                return;
+
+            driveOn = !driveOn;
+            DriveBtn.Background = driveOn ? OnColor : OffColor;
         }
 
-        private void ParkBtn_Click(object sender, MouseButtonEventArgs e)
+        private void ParkBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (ValetToggle.IsChecked == true)
-            {
-                ParkBtn.Background = OnColor;
-                DriveBtn.Background = OffColor;
-            }
+            if (ValetToggle.IsChecked != true)
+                return;
+
+            parkOn = !parkOn;
+            ParkBtn.Background = parkOn ? OnColor : OffColor;
         }
 
-        // ================== BACK ==================
-        private void Back_Click(object sender, MouseButtonEventArgs e)
+
+        // ==========================
+        //    🔙 BACK 버튼
+        // ==========================
+        private void Back_Click(object sender, RoutedEventArgs e)
         {
             NavigationService?.GoBack();
         }

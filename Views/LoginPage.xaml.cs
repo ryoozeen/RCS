@@ -19,7 +19,7 @@ namespace DotBotCarClient.Views
 
         private void BtnEnroll_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("회원가입은 나중에 구현됩니다.");
+            NavigationService.Navigate(new EnrollPage());
         }
     }
 }
