@@ -33,25 +33,30 @@
 
         <Button x:Name="ServerConnect"
                 Content="서버 연결" 
-                HorizontalAlignment="Center" 
-                Grid.Row="2"
+                HorizontalAlignment="Left" 
+                Grid.Row="2"               
                 VerticalAlignment="Center" 
                 Foreground="Green"
+                BorderBrush="Black"
                 FontWeight="Bold"
                 Height="40" 
-                Width="190"/>
+                Width="180" 
+                Click="ServerConnect_Click"/>
 
         <Button x:Name="ServerShutdown"
                 Content="서버 종료" 
-                HorizontalAlignment="Center" 
+                HorizontalAlignment="Right" 
                 Grid.Row="2"
                 Grid.Column="1"
                 VerticalAlignment="Center" 
                 Foreground="Red"
+                BorderBrush="Black"
                 FontWeight="Bold"
                 Height="40" 
-                Width="190" 
+                Width="180" 
+                Click="ServerShutdown_Click" 
                 />
+
         <Border x:Name="ServerStatusBar"
                 BorderBrush="Red" 
                 Background="Red"
@@ -62,13 +67,14 @@
                 Height="41"
                 Width="380">
 
-            <TextBlock Text="Server Stop"
+            <TextBlock x:Name="ServerStatusText"
+                       Text="Server Stop"
                        Foreground="White"
                        FontWeight="Bold"
                        FontSize="20"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center" />
         </Border>
-        
+
     </Grid>
 </Window>
