@@ -13,7 +13,7 @@ namespace DotBotCarClient.Network
         public bool IsConnected => _client != null && _client.Connected;
 
         // 나중에 서버에서 오는 메시지를 처리할 때 쓰는 이벤트
-        public event Action<ControlMessage>? OnMessageReceived;
+        public event Action<BaseMessage>? OnMessageReceived;
         public event Action? OnDisconnected;
 
         public async Task ConnectAsync(string host, int port)
@@ -27,13 +27,13 @@ namespace DotBotCarClient.Network
             // 연결 후 수신 루프 시작
             _ = Task.Run(ReceiveLoop);
         }
-
-        public async Task SendAsync(ControlMessage message)
+        
+        public async Task SendAsync(object msg)
         {
             if (_stream == null)
                 throw new InvalidOperationException("서버에 연결되지 않았습니다.");
 
-            byte[] buffer = ControlMessage.SerializeMessage(message);
+            byte[] buffer = ControlMessage.Serialize(msg);
             await _stream.WriteAsync(buffer, 0, buffer.Length);
         }
 
@@ -43,9 +43,11 @@ namespace DotBotCarClient.Network
             {
                 while (true)
                 {
-                    if (_stream == null) break;
+                    if (_stream == null)
+                        break;
 
-                    var msg = await ControlMessage.DeserializeMessageAsync(_stream);
+                    // 역직렬화 → BaseMessage
+                    var msg = await ControlMessage.DeserializeAsync(_stream);
                     if (msg == null)
                         break; // 연결 끊김
 
@@ -54,7 +56,7 @@ namespace DotBotCarClient.Network
             }
             catch
             {
-                // 통신 중 예외 → 연결 종료 처리
+                // 통신중 예외 → 연결 종료 처리
             }
             finally
             {

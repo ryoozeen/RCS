@@ -1,8 +1,11 @@
-﻿using System;
+﻿using DotBotCarClient.Protocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -10,23 +13,35 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Windows;
-using System.Windows.Controls;
 
 namespace DotBotCarClient.Views
 {
     /// <summary>
     /// EnrollPage.xaml 상호작용 로직
     /// </summary>
-    public partial class EnrollPage : Page
+    public partial class EnrollPage : Page, IProtocolHandler
     {
         public EnrollPage()
         {
             InitializeComponent();
         }
+        public void HandleProtocolMessage(BaseMessage msg)
+        {
+            if (msg is EnrollRes res)
+            {
+                MessageBox.Show(res.Success
+                    ? "회원가입 성공"
+                    : $"회원가입 실패: {res.Reason}");
 
+                if (res.Success)
+                {
+                    // 🔹 회원가입 성공 시 → 로그인 페이지로 이동
+                    NavigationService?.Navigate(new LoginPage());
+                }
+            }
+        }
         // 회원가입 완료 버튼
-        private void BtnEnrollOk_Click(object sender, RoutedEventArgs e)
+        private async void BtnEnrollOk_Click(object sender, RoutedEventArgs e)
         {
             string id = txtId.Text.Trim();
             string name = txtName.Text.Trim();
@@ -60,16 +75,17 @@ namespace DotBotCarClient.Views
                 return;
             }
 
-            // TODO: 여기에서 서버로 회원가입 요청 보내기
-            // ex) await CarClientApi.RegisterAsync(id, pw, name);
+            // 회원가입 요청 전송
+            var msg = new EnrollReq
+            {
+                Id = id,
+                UserName = name,
+                Password = pw,
+                CarModel = "TESLA"      // 필요하면 ComboBox 등으로 입력하게 하면 됨
+            };
 
-            MessageBox.Show("회원가입이 완료되었습니다.\n로그인 화면으로 이동합니다.",
-                "회원가입", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            // 로그인 페이지로 이동
-            NavigationService?.Navigate(new LoginPage());
+            await App.Network.SendAsync(msg);
         }
-
         // 취소 버튼 → 로그인 화면/이전 화면으로 돌아가기
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {

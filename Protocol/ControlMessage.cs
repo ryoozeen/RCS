@@ -4,123 +4,122 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DotBotCarClient.Protocol
 {
+    // 직렬화 + 역직렬화 + 파싱
     public class ControlMessage
     {
-        // 1) 메시지 종류 (ENROLL_REQ, LOGIN_REQ, DOOR_REQ, ... )
-        public string? Msg { get; set; }
-
-        // 2) 사용자 정보 (회원가입/로그인에서 사용)
-        public string? Id { get; set; }           // 로그인 아이디
-        public string? Password { get; set; }     // 비밀번호
-        public string? UserName { get; set; }     // 사용자 이름
-        public string? CarInfo { get; set; }      // 차량 정보 (EV6 등)
-
-        // 3) 차량/제어 공통
-        public int VehicleId { get; set; }       // 차량 번호 (1, 2, 3...)
-        public string? Command { get; set; }      // ON/OFF, OPEN/CLOSE, UP/DOWN 등
-
-        // 4) 응답 공통
-        public bool Success { get; set; }        // True / False
-        public string? Reason { get; set; }       // 실패 이유나 상태 메시지
-        public string? CarModel { get; set; }     // LOGIN_RES 에서 내려줄 차량 모델명
-
-        // 5) 상태 응답용 (STATUS_RES 등에서 사용 가능)
-        public string? DoorStatus { get; set; }   // OPEN/CLOSE
-        public string? StartStatus { get; set; }  // ON/OFF
-        public string? AirStatus { get; set; }    // ON/OFF
-        public string? HeatStatus { get; set; }   // ON/OFF
-        public string? ChargingStatus { get; set; } // ON/OFF
-        public int BatteryLevel { get; set; }    // 배터리 잔량(0~100)
-
-        // 메시지 직렬화 (송신용)
-        // ControlMessage → JSON → 바이트 → 길이 헤더 + 바이트
-        public static byte[] SerializeMessage(ControlMessage message)
+        // ------------------------------
+        // 메시지 직렬화 (송신)
+        // BaseMessage → JSON → byte[]
+        // ------------------------------
+        public static byte[] Serialize(object message)
         {
-            // 1. JSON 직렬화
-            string json = JsonSerializer.Serialize(message);
+            var options = new JsonSerializerOptions
+            {
+                Converters = { new JsonStringEnumConverter() },
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
 
-            // 2. UTF-8 바이트 변환
-            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+            string json = JsonSerializer.Serialize(message, message.GetType(), options);
+            byte[] body = Encoding.UTF8.GetBytes(json);
 
-            // 3. 길이 헤더 (4바이트) + JSON 바이트
-            byte[] lengthBytes = BitConverter.GetBytes(jsonBytes.Length);
-            byte[] result = new byte[4 + jsonBytes.Length];
+            byte[] lengthBytes = BitConverter.GetBytes(body.Length);
+            byte[] packet = new byte[lengthBytes.Length + body.Length];
 
-            // 4. 길이 헤더 복사
-            Array.Copy(lengthBytes, 0, result, 0, 4);
+            Array.Copy(lengthBytes, 0, packet, 0, 4);
+            Array.Copy(body, 0, packet, 4, body.Length);
 
-            // 5. JSON 바이트 복사
-            Array.Copy(jsonBytes, 0, result, 4, jsonBytes.Length);
-
-            return result;
+            return packet;
         }
 
-        //  메시지 역직렬화 (수신용)
-        // 길이 헤더 읽기 → 바디 바이트 읽기 → JSON → ControlMessage
-        public static async Task<ControlMessage?> DeserializeMessageAsync(NetworkStream stream)
+        // ------------------------------
+        // 메시지 역직렬화 (수신)
+        // byte[] → JSON → BaseMessage
+        // ------------------------------
+        public static async Task<BaseMessage?> DeserializeAsync(NetworkStream stream)
         {
-            // 최대 메시지 크기 제한 (100KB)
             const int MAX_MESSAGE_SIZE = 1024 * 100;
-
-            // 1. 길이 헤더 읽기 (4바이트)
             byte[] lengthBytes = new byte[4];
+
+            // 1) 길이 헤더 읽기
             int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4);
-
             if (bytesRead != 4)
-            {
-                return null; // 연결 끊김
-            }
+                return null;
 
-            // 2. 길이 파싱
             int messageLength = BitConverter.ToInt32(lengthBytes, 0);
+            if (messageLength <= 0 || messageLength > MAX_MESSAGE_SIZE)
+                return null;
 
-            // 3. 메시지 크기 검증
-            if (messageLength < 0)
-            {
-                return null; // 음수 길이는 잘못된 메시지
-            }
-
-            if (messageLength > MAX_MESSAGE_SIZE)
-            {
-                return null; // 너무 큰 메시지는 거부 (보안/DoS 방지)
-            }
-
-            if (messageLength == 0)
-            {
-                return null; // 빈 메시지는 무효
-            }
-
-            // 4. 메시지 바디 읽기 (길이만큼)
             byte[] messageBytes = new byte[messageLength];
             int totalBytesRead = 0;
 
+            // 2) 바디 읽기
             while (totalBytesRead < messageLength)
             {
                 bytesRead = await stream.ReadAsync(
                     messageBytes,
                     totalBytesRead,
-                    messageLength - totalBytesRead
-                );
+                    messageLength - totalBytesRead);
 
                 if (bytesRead == 0)
-                {
-                    return null; // 연결 끊김
-                }
+                    return null;
 
                 totalBytesRead += bytesRead;
             }
 
-            // 5. 바이트 → JSON 문자열
+            // 3) JSON 문자열 생성
             string json = Encoding.UTF8.GetString(messageBytes);
+            Console.WriteLine($"[RAW JSON] {json}");
 
-            // 6. JSON → ControlMessage
-            ControlMessage? message = JsonSerializer.Deserialize<ControlMessage>(json);
-
-            return message;
+            // 4) Parse로 타입 분기 후 반환
+            return Parse(json);
         }
+
+
+        // ------------------------------
+        // Parse: MsgType 보고 클래스로 분기
+        // ------------------------------
+        public static BaseMessage? Parse(string json)
+        {
+            var options = new JsonSerializerOptions
+            {
+                Converters = { new JsonStringEnumConverter() },
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            // msg 또는 Msg 둘 다 체크하도록 수정
+            if (!root.TryGetProperty("msg", out var msgProp) &&
+                !root.TryGetProperty("Msg", out msgProp))
+                return null;
+
+            // Enum.TryParse 사용
+            if (!Enum.TryParse(msgProp.GetString(), out MsgType type))
+                return null;
+
+            return type switch
+            {
+                MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, options),
+                MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, options),
+
+                MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json, options),
+                MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json, options),
+
+                MsgType.DOOR_REQ => JsonSerializer.Deserialize<DoorReq>(json, options),
+                MsgType.DOOR_RES => JsonSerializer.Deserialize<DoorRes>(json, options),
+
+                MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
+                MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
+
+                _ => JsonSerializer.Deserialize<BaseMessage>(json, options)
+            };
+        }
+
     }
 }
