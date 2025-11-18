@@ -24,7 +24,9 @@
         CONTROL_REQ,
         CONTROL_RES,
         STATUS_REQ,
-        STATUS_RES
+        STATUS_RES,
+        STOP_CHARGING_REQ,
+        STOP_CHARGING_RES
     }
     // 공통 메시지(기반 클래스)
     public class BaseMessage
@@ -99,6 +101,8 @@
     public class StatusReq : BaseMessage
     {
         public bool resulted { get; set; }  // 서버가 필요하면 보냄
+        public bool Status { get; set; }
+
         public StatusReq()
         {
             Msg = MsgType.STATUS_REQ;
@@ -211,4 +215,15 @@
     }
 
   
+    
+    public class StopChargingReq : BaseMessage
+    {
+        public bool Stop { get; set; }
+        public StopChargingReq() { Msg = MsgType.STOP_CHARGING_REQ; }
+    }
+    public class StopChargingRes : BaseMessage
+    {
+        public bool Result { get; set; }
+        public StopChargingRes() { Msg = MsgType.STOP_CHARGING_RES; }
+    }
 }
