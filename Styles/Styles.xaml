@@ -18,6 +18,7 @@
     <!-- 텍스트 -->
     <SolidColorBrush x:Key="TeslaPrimaryText" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="TeslaSecondaryText" Color="#B0B0B0"/>
+    <SolidColorBrush x:Key="TeslaBg" Color="#111111"/>
 
     <!-- 유리판 같은 박스 배경 -->
     <LinearGradientBrush x:Key="TeslaBox" StartPoint="0,0" EndPoint="0,1">

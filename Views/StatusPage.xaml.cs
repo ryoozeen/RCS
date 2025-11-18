@@ -9,6 +9,11 @@ namespace DotBotCarClient.Views
         public StatusPage()
         {
             InitializeComponent();
+            // 테스트용 초기 데이터
+            UpdateTemperature(22, 18);
+            UpdateRange(320);
+            UpdateLocation("집", "2분 전");
+            UpdateLastTrip(15.2);
         }
 
         // ===============================
@@ -30,6 +35,30 @@ namespace DotBotCarClient.Views
             MessageBox.Show("트렁크 열기 / 닫기 예정");
         }
 
+        // 온도 업데이트
+        public void UpdateTemperature(int indoor, int outdoor)
+        {
+            TempText.Text = $"실내 {indoor}°C";
+            OutTempText.Text = $"실외 {outdoor}°C";
+        }
+
+        // 주행거리 업데이트
+        public void UpdateRange(int range)
+        {
+            RangeText.Text = $"Range: {range} km";
+        }
+
+        // 위치 업데이트
+        public void UpdateLocation(string location, string time)
+        {
+            LocationText.Text = $"주차 위치: {location} ({time})";
+        }
+
+        // 최근 이동거리 업데이트
+        public void UpdateLastTrip(double distance)
+        {
+            LastTripDistanceText.Text = $"{distance:F1} km";
+        }
 
         // ===============================
         //   하단 네비게이션 버튼

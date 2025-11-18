@@ -4,9 +4,10 @@
       Style="{StaticResource TeslaPage}"
       Title="ChargingPage">
 
+
     <Grid x:Name="RootGrid">
 
-        <!-- 페이지 등장 애니메이션 -->
+        <!-- 모든 속성 요소를 먼저 선언 -->
         <Grid.RenderTransform>
             <TranslateTransform X="40"/>
         </Grid.RenderTransform>
@@ -24,11 +25,6 @@
             </EventTrigger>
         </Grid.Triggers>
 
-
-
-        <!-- ============================
-              레이아웃 구성
-        ============================= -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -39,6 +35,16 @@
         </Grid.RowDefinitions>
 
 
+        <!-- 배경 이미지 (car.png) - 희미하게 -->
+        <Image Source="/Assets/car.png" 
+               Stretch="Uniform"
+               Opacity="0.15"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Grid.RowSpan="7"/>
+
+        <!-- 어두운 오버레이 (가독성 향상) -->
+        <Rectangle Fill="#1a1a1a" Opacity="0.5" Grid.RowSpan="3"/>
 
         <!-- ============================
               ⬅ HEADER
@@ -104,6 +110,7 @@
                             CornerRadius="10"
                             HorizontalAlignment="Left"
                             Width="0"/>
+                    <TextBlock Text="⚡" FontSize="40" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TeslaBg}"/>
                     <!-- 서버 연동 후 Width 조절 -->
                 </Grid>
             </Border>

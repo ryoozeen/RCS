@@ -12,6 +12,7 @@
     <None Remove="Assets\air.png" />
     <None Remove="Assets\battery.png" />
     <None Remove="Assets\car.png" />
+    <None Remove="Assets\carInside.png" />
     <None Remove="Assets\heat.png" />
     <None Remove="Assets\horn.png" />
     <None Remove="Assets\light.png" />
@@ -33,6 +34,9 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Assets\car.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\carInside.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Assets\heat.png">

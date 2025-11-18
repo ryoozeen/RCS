@@ -7,6 +7,7 @@
 
     <Grid x:Name="RootGrid" Margin="-15,0,-2,0">
 
+        <!-- 모든 속성 요소를 먼저 선언 -->
         <Grid.RenderTransform>
             <TranslateTransform X="40"/>
         </Grid.RenderTransform>
@@ -25,14 +26,25 @@
         </Grid.Triggers>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" MinHeight="67"/>
-            <RowDefinition/>
+            <RowDefinition Height="9.397"/>
+            <RowDefinition Height="57.603"/>
+            <RowDefinition Height="59*"/>
+            <RowDefinition Height="317*"/>
+            <RowDefinition Height="18*"/>
             <RowDefinition Height="151"/>
             <RowDefinition Height="7"/>
         </Grid.RowDefinitions>
 
+        <!-- 배경 이미지 (car.png) - 희미하게 -->
+        <Image Source="/Assets/carInside.png" 
+               Stretch="Uniform"
+               Opacity="0.15"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Grid.RowSpan="7"/>
+
         <!-- 상단 -->
-        <Grid Grid.Row="0" Margin="20,20,20,0">
+        <Grid Grid.Row="1" Margin="20,11,20,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50"/>
                 <!-- Back 버튼 영역 -->
@@ -68,7 +80,7 @@
         </Grid>
 
         <!-- 온도 -->
-        <Grid Grid.Row="1" VerticalAlignment="Top" Margin="0,40,0,0" Height="67">
+        <Grid Grid.Row="2" VerticalAlignment="Top" Margin="0,40,0,0" Height="67" Grid.RowSpan="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition Width="Auto"/>
@@ -96,11 +108,11 @@
         </Grid>
 
         <!-- 아이콘 4개 -->
-        <Grid Grid.Row="1"
+        <Grid Grid.Row="3"
               HorizontalAlignment="Center"
               VerticalAlignment="Top"
-              Margin="0,139,0,0"
-              Width="294" Height="259" Grid.RowSpan="2">
+              Margin="0,80,0,0"
+              Width="294" Height="259" Grid.RowSpan="3">
 
             <Grid.RowDefinitions>
                 <RowDefinition/>
@@ -166,7 +178,7 @@
         </Grid>
 
         <!-- 하단 Valet / Drive / Park -->
-        <StackPanel Grid.Row="2" Margin="30,20,30,33">
+        <StackPanel Grid.Row="5" Margin="30,20,30,33">
 
             <Grid Margin="0,0,0,20">
                 <TextBlock Text="Valet Mode"

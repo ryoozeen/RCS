@@ -81,21 +81,96 @@
                            VerticalAlignment="Center"/>
             </StackPanel>
 
+            <!-- 주행 가능 거리 -->
+            <TextBlock x:Name="RangeText"
+                       Text="Range: 320 km"
+                       Style="{StaticResource TeslaSubText}"
+                       FontSize="16"
+                       HorizontalAlignment="Center"
+                       Margin="0,8,0,0"/>
+
         </StackPanel>
 
 
 
         <!-- =============================
-             2) CAR IMAGE
+             추가 정보 (온도, 위치, 최근 이동)
+        ==============================-->
+        <Grid Grid.Row="0"
+              Margin="20,0,20,0"
+              VerticalAlignment="Bottom">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 온도 정보 -->
+            <StackPanel Grid.Column="0"
+                        HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🌡️ " FontSize="14"/>
+                    <TextBlock x:Name="TempText"
+                               Text="실내 22°C"
+                               Style="{StaticResource TeslaSubText}"
+                               FontSize="13"/>
+                </StackPanel>
+                <TextBlock x:Name="OutTempText"
+                           Text="실외 18°C"
+                           Style="{StaticResource TeslaSubText}"
+                           FontSize="13"
+                           Margin="18,2,0,0"
+                           Opacity="0.7"/>
+            </StackPanel>
+
+            <!-- 최근 이동 거리 -->
+            <StackPanel Grid.Column="1"
+                        HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🚗 " FontSize="14"/>
+                    <TextBlock x:Name="LastTripText"
+                               Text="Last trip"
+                               Style="{StaticResource TeslaSubText}"
+                               FontSize="13"/>
+                </StackPanel>
+                <TextBlock x:Name="LastTripDistanceText"
+                           Text="15.2 km"
+                           Style="{StaticResource TeslaSubText}"
+                           FontSize="13"
+                           Margin="0,2,0,0"
+                           HorizontalAlignment="Right"
+                           Opacity="0.7"/>
+            </StackPanel>
+        </Grid>
+
+
+
+        <!-- =============================
+             2) CAR IMAGE with Gradient Background
         ==============================-->
 
         <Border Grid.Row="1"
                 Margin="30,10,30,30"
-                Background="#1A000000"
+                Background="Transparent"
                 CornerRadius="28"
                 VerticalAlignment="Top">
 
             <Grid>
+                <!-- 그라데이션 배경 효과 -->
+                <Ellipse Width="280" Height="280"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="0,20,0,0">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#40FFFFFF" Offset="0"/>
+                            <GradientStop Color="#10FFFFFF" Offset="0.5"/>
+                            <GradientStop Color="#00FFFFFF" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+
+                <!-- 자동차 이미지 -->
                 <Image x:Name="CarImage"
                        Source="/Assets/car.png"
                        Stretch="Uniform"
@@ -110,55 +185,74 @@
              3) CONTROL ICONS (Start/Lock/Trunk)
         ==============================-->
         <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Center"
-                    Margin="0,0,0,20">
+                    Margin="0,0,0,15">
 
-            <!-- START -->
-            <Border Style="{StaticResource TeslaIconBox}"
-                    Margin="8">
-                <Button Background="Transparent"
-                        BorderBrush="Transparent"
-                        Click="start_Click">
-                    <StackPanel>
-                        <Image Source="/Assets/start.png" Width="40"/>
-                        <TextBlock Text="Start"
-                                   Style="{StaticResource TeslaSubText}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+            <!-- 차량 위치 정보 -->
+            <Border Background="{StaticResource TeslaBox}"
+                    CornerRadius="12"
+                    Padding="15,10"
+                    Margin="20,0,20,15">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center">
+                    <TextBlock Text="📍 " FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="LocationText"
+                               Text="주차 위치: 집 (2분 전)"
+                               Style="{StaticResource TeslaSubText}"
+                               FontSize="14"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
             </Border>
 
-            <!-- LOCK -->
-            <Border Style="{StaticResource TeslaIconBox}"
-                    Margin="8">
-                <Button Background="Transparent"
-                        BorderBrush="Transparent"
-                        Click="Lock_Click">
-                    <StackPanel>
-                        <Image Source="/Assets/lock.png" Width="40"/>
-                        <TextBlock Text="Lock"
-                                   Style="{StaticResource TeslaSubText}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-            </Border>
+            <!-- 컨트롤 아이콘들 -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center">
 
-            <!-- TRUNK -->
-            <Border Style="{StaticResource TeslaIconBox}"
-                    Margin="8">
-                <Button Background="Transparent"
-                        BorderBrush="Transparent"
-                        Click="Trunk_Click">
-                    <StackPanel>
-                        <Image Source="/Assets/trunk.png" Width="40"/>
-                        <TextBlock Text="Trunk"
-                                   Style="{StaticResource TeslaSubText}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-            </Border>
+                <!-- START -->
+                <Border Style="{StaticResource TeslaIconBox}"
+                        Margin="8">
+                    <Button Background="Transparent"
+                            BorderBrush="Transparent"
+                            Click="start_Click">
+                        <StackPanel>
+                            <Image Source="/Assets/start.png" Width="40"/>
+                            <TextBlock Text="Start"
+                                       Style="{StaticResource TeslaSubText}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
 
+                <!-- LOCK -->
+                <Border Style="{StaticResource TeslaIconBox}"
+                        Margin="8">
+                    <Button Background="Transparent"
+                            BorderBrush="Transparent"
+                            Click="Lock_Click">
+                        <StackPanel>
+                            <Image Source="/Assets/lock.png" Width="40"/>
+                            <TextBlock Text="Lock"
+                                       Style="{StaticResource TeslaSubText}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+
+                <!-- TRUNK -->
+                <Border Style="{StaticResource TeslaIconBox}"
+                        Margin="8">
+                    <Button Background="Transparent"
+                            BorderBrush="Transparent"
+                            Click="Trunk_Click">
+                        <StackPanel>
+                            <Image Source="/Assets/trunk.png" Width="40"/>
+                            <TextBlock Text="Trunk"
+                                       Style="{StaticResource TeslaSubText}"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+
+            </StackPanel>
         </StackPanel>
 
 
