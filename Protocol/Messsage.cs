@@ -24,7 +24,9 @@
         CONTROL_REQ,
         CONTROL_RES,
         STATUS_REQ,
-        STATUS_RES
+        STATUS_RES,
+        STOP_CHARGING_REQ,
+        STOP_CHARGING_RES
     }
     // 공통 메시지(기반 클래스)
     public class BaseMessage
@@ -97,10 +99,7 @@
     // 상태 전송
     public class StatusReq : BaseMessage
     {
-        public bool Charging { get; set; }
-        public bool Parking { get; set; }
-        public bool Driving { get; set; }
-        public double Battery { get; set; }
+        public bool Status { get; set; }
 
         public StatusReq()
         {
@@ -110,7 +109,11 @@
     // 상태 응답
     public class StatusRes : BaseMessage
     {
-        public bool resulted { get; set; }
+        public bool Charging { get; set; }
+        public bool Parking { get; set; }
+        public bool Driving { get; set; }
+        public double Battery { get; set; }
+
         public StatusRes()
         {
             Msg = MsgType.STATUS_RES;
@@ -206,5 +209,16 @@
     {
         public bool Active { get; set; }
         public ControlRes() { Msg = MsgType.CONTROL_RES; }
+    }
+    
+    public class StopChargingReq : BaseMessage
+    {
+        public bool Stop { get; set; }
+        public StopChargingReq() { Msg = MsgType.STOP_CHARGING_REQ; }
+    }
+    public class StopChargingRes : BaseMessage
+    {
+        public bool Result { get; set; }
+        public StopChargingRes() { Msg = MsgType.STOP_CHARGING_RES; }
     }
 }

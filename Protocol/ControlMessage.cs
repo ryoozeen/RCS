@@ -139,6 +139,8 @@ namespace DotBotCarClient.Protocol
                 MsgType.CONTROL_REQ => JsonSerializer.Deserialize<ControlReq>(json, options),
                 MsgType.CONTROL_RES => JsonSerializer.Deserialize<ControlRes>(json, options),
 
+                MsgType.STOP_CHARGING_REQ => JsonSerializer.Deserialize<StopChargingReq>(json, options),
+                MsgType.STOP_CHARGING_RES => JsonSerializer.Deserialize<StopChargingRes>(json, options),
 
                 _ => JsonSerializer.Deserialize<BaseMessage>(json, options)
             };
