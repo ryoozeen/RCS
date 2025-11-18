@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -8,29 +9,33 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Threading.Tasks;
+using System.ComponentModel;
 
 using SERVER.Protocol;
 using SERVER.Network;
-using System.ComponentModel; 
 
 namespace SERVER
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private TcpServer? _tcpServer;
-        private const int Port = 7000; //포트 번호
+        private const int Port = 7000;
+
+        private readonly DatabaseManager _dbManager; // [필수] DB 변수 선언
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // [DB 연결 문자열] Password는 본인 환경에 맞게 설정하세요.
+            string connectionString = "Server=localhost;Port=3306;Database=rcs;User=root;Password=;";
+            _dbManager = new DatabaseManager(connectionString);
+
             _tcpServer = new TcpServer(Port);
             _tcpServer.OnMessageReceived += TcpServer_OnMessageReceived;
         }
 
-        // 서버 연결 버튼
         private async void ServerConnect_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
@@ -46,7 +51,6 @@ namespace SERVER
             }
         }
 
-        // 상태바 업데이트
         private void UpdateServerStatus(bool isRunning)
         {
             if (isRunning)
@@ -63,7 +67,6 @@ namespace SERVER
             }
         }
 
-        // [수정] 로그 출력 메서드 (스레드 안전하게 변경)
         private void AppendLog(string message)
         {
             if (!Dispatcher.CheckAccess())
@@ -76,7 +79,6 @@ namespace SERVER
             LogTextBox.ScrollToEnd();
         }
 
-        // 서버 종료 버튼
         private void ServerShutdown_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
@@ -92,12 +94,11 @@ namespace SERVER
             }
         }
 
-        private void TcpServer_OnMessageReceived(string clientId, ControlMessage message)
+        private async void TcpServer_OnMessageReceived(string clientId, ControlMessage message)
         {
             string logMessage = FormatLogMessage(clientId, message, " [RECV]");
             AppendLog(logMessage);
-
-            RouteMessage(clientId, message);
+            await RouteMessage(clientId, message);
         }
 
         private string FormatLogMessage(string clientId, ControlMessage message, string direction = "")
@@ -107,43 +108,21 @@ namespace SERVER
 
             switch (message.msg)
             {
-                case "CLIENT_IDENTIFY":
-                    content = $"클라이언트 식별: {message.command}";  
-                    break;
-                case "ENROLL_REQ":
-                    content = $"회원가입 요청: {message.id}"; 
-                    break;
-                case "ENROLL_RES":
-                    content = $"회원가입 응답: {message.registered}";
-                    break;
-                case "LOGIN_REQ":
-                    content = $"로그인 요청: {message.id}"; 
-                    break;
-                case "LOGIN_RES":
-                    content = $"로그인 응답: {message.logined}"; 
-                    break;
-                case "DOOR_REQ":
-                    content = $"문 제어 요청: {message.open}"; 
-                    break;
-                case "DOOR_RES":
-                    content = $"문 제어 응답: {message.doorStatus}"; 
-                    break;
-                case "STATUS_REQ":
-                    content = $"상태 요청: Charging={message.charging}";
-                    break;
-                case "STATUS_RES":
-                    content = $"상태 응답: {message.resulted}";
-                    break;
-                default:
-                    content = $"[알 수 없는 메시지] Msg: {message.msg}";
-                    break;
+                case "CLIENT_IDENTIFY": content = $"클라이언트 식별: {message.command}"; break;
+                case "ENROLL_REQ": content = $"회원가입 요청: {message.id}"; break;
+                case "ENROLL_RES": content = $"회원가입 응답: {message.registered}"; break;
+                case "LOGIN_REQ": content = $"로그인 요청: {message.id}"; break;
+                case "LOGIN_RES": content = $"로그인 응답: {message.logined}"; break;
+                case "DOOR_REQ": content = $"문 제어 요청: {message.open}"; break;
+                case "DOOR_RES": content = $"문 제어 응답: {message.doorStatus}"; break;
+                case "STATUS_REQ": content = $"상태 요청: Charging={message.charging}"; break;
+                case "STATUS_RES": content = $"상태 응답: {message.resulted}"; break;
+                default: content = $"[알 수 없는 메시지] Msg: {message.msg}"; break;
             }
-
             return $"{clientName}{direction} {content}";
         }
 
- 
-        private void RouteMessage(string clientId, ControlMessage message)
+        private async Task RouteMessage(string clientId, ControlMessage message)
         {
             ControlMessage? response = null;
             ControlMessage? forward = null;
@@ -151,27 +130,37 @@ namespace SERVER
 
             try
             {
-      
                 switch (message.msg)
                 {
-                    //  클라이언트 식별
                     case "CLIENT_IDENTIFY":
-                        string clientType = message.command ?? "Unknown"; 
+                        string clientType = message.command ?? "Unknown";
                         _tcpServer?.IdentifyClient(clientId, clientType);
                         AppendLog($"[{clientId}] 식별 완료: {clientType}");
                         break;
 
-                    //  응답 
+                    // [DB 연동] ENROLL_REQ
                     case "ENROLL_REQ":
-                        response = new ControlMessage { msg = "ENROLL_RES", registered = true }; 
+                        int rowsAffected = await _dbManager.EnrollUserAsync(message);
+                        bool isEnrolled = rowsAffected > 0;
+
+                        // [WPF 로그 출력] DB 작업 결과를 GUI 로그에 직접 기록
+                        AppendLog($"[DB RESULT] ENROLL: {rowsAffected} rows affected.");
+
+                        response = new ControlMessage { msg = "ENROLL_RES", registered = isEnrolled };
                         targetClientId = clientId;
                         break;
 
+                    // [DB 연동] LOGIN_REQ
                     case "LOGIN_REQ":
-                        response = new ControlMessage { msg = "LOGIN_RES", logined = true };
+                        int loginCount = await _dbManager.LoginUserAsync(message);
+                        bool isLogined = loginCount > 0;
+
+                        // [WPF 로그 출력] DB 작업 결과를 GUI 로그에 직접 기록
+                        AppendLog($"[DB RESULT] LOGIN: Found {loginCount} user(s).");
+
+                        response = new ControlMessage { msg = "LOGIN_RES", logined = isLogined };
                         targetClientId = clientId;
                         break;
-
 
                     case "START_REQ":
                     case "DOOR_REQ":
@@ -202,18 +191,18 @@ namespace SERVER
 
                 if (response != null && targetClientId != null)
                 {
-                    _tcpServer?.SendToClientAsync(targetClientId, response);
+                    await _tcpServer.SendToClientAsync(targetClientId, response);
                     LogSend(targetClientId, response);
                 }
 
                 if (forward != null && targetClientId != null)
                 {
-                    _tcpServer?.SendToClientAsync(targetClientId, forward);
+                    await _tcpServer.SendToClientAsync(targetClientId, forward);
                     LogSend(targetClientId, forward);
                 }
                 else if (forward != null && targetClientId == null)
                 {
-                    AppendLog($"[라우팅 실패] 메시지 {message.msg}를 전달할 대상({(message.msg.EndsWith("_REQ") ? "DOBOTLAB" : "RCS")})을 찾을 수 없습니다."); // [수정] msg
+                    AppendLog($"[라우팅 실패] 메시지 {message.msg}를 전달할 대상({(message.msg?.EndsWith("_REQ") == true ? "DOBOTLAB" : "RCS")})을 찾을 수 없습니다.");
                 }
             }
             catch (Exception ex)
@@ -233,11 +222,7 @@ namespace SERVER
             if (_tcpServer != null)
             {
                 _tcpServer.OnMessageReceived -= TcpServer_OnMessageReceived;
-                try
-                {
-                    _tcpServer.Stop();
-                }
-                catch (Exception) { }
+                try { _tcpServer.Stop(); } catch { }
             }
             base.OnClosing(e);
         }
