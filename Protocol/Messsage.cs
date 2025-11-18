@@ -116,4 +116,95 @@
             Msg = MsgType.STATUS_RES;
         }
     }
+
+    // 시동 제어
+    public class StartReq : BaseMessage
+    {
+        public bool Active { get; set; }
+        public StartReq() { Msg = MsgType.START_REQ; }
+    }
+
+    public class StartRes : BaseMessage
+    {
+        public bool Active { get; set; }
+        public StartRes() { Msg = MsgType.START_RES; }
+    }
+
+    // 트렁크 제어
+    public class TrunkReq : BaseMessage
+    {
+        public bool Open { get; set; }
+        public TrunkReq() { Msg = MsgType.TRUNK_REQ; }
+    }
+
+    public class TrunkRes : BaseMessage
+    {
+        public bool Open { get; set; }
+        public TrunkRes() { Msg = MsgType.TRUNK_RES; }
+    }
+
+    // 에어컨 제어
+    public class AirReq : BaseMessage
+    {
+        public bool On { get; set; }
+        public AirReq() { Msg = MsgType.AIR_REQ; }
+    }
+
+    public class AirRes : BaseMessage
+    {
+        public bool On { get; set; }
+        public AirRes() { Msg = MsgType.AIR_RES; }
+    }
+
+    // 온도 제어
+    public class CliReq : BaseMessage
+    {
+        public int Temp { get; set; }
+        public CliReq() { Msg = MsgType.CLI_REQ; }
+    }
+
+    public class CliRes : BaseMessage
+    {
+        public bool Result { get; set; }
+        public CliRes() { Msg = MsgType.CLI_RES; }
+    }
+
+    // 열선 제어
+    public class HeatReq : BaseMessage
+    {
+        public bool On { get; set; }
+        public HeatReq() { Msg = MsgType.HEAT_REQ; }
+    }
+
+    public class HeatRes : BaseMessage
+    {
+        public bool On { get; set; }
+        public HeatRes() { Msg = MsgType.HEAT_RES; }
+    }
+
+    // 라이트 제어
+    public class LightReq : BaseMessage
+    {
+        public bool On { get; set; }
+        public LightReq() { Msg = MsgType.LIGHT_REQ; }
+    }
+
+    public class LightRes : BaseMessage
+    {
+        public bool On { get; set; }
+        public LightRes() { Msg = MsgType.LIGHT_RES; }
+    }
+
+    // 원격주차 제어(UP/DOWN 또는 PARK/DRIVE)
+    public class ControlReq : BaseMessage
+    {
+        public bool Active { get; set; }
+        public ControlReq() { Msg = MsgType.CONTROL_REQ; }
+    }
+
+    public class ControlRes : BaseMessage
+    {
+        public bool Active { get; set; }
+        public ControlRes() { Msg = MsgType.CONTROL_RES; }
+    }
 }
