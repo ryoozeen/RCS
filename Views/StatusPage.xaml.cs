@@ -68,7 +68,7 @@ namespace DotBotCarClient.Views
         {
             var req = new StatusReq
             {
-                carstatus = true
+                car_status = true
             };
 
             await App.Network.SendAsync(req);
@@ -85,13 +85,13 @@ namespace DotBotCarClient.Views
 
         private async void Lock_Click(object sender, RoutedEventArgs e)
         {
-            var req = new DoorReq { open = true };
+            var req = new DoorReq { door = true };
             await App.Network.SendAsync(req);
         }
 
         private async void Trunk_Click(object sender, RoutedEventArgs e)
         {
-            var req = new TrunkReq { open = true };
+            var req = new TrunkReq { trunk = true };
             await App.Network.SendAsync(req);
         }
 

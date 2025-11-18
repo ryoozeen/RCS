@@ -78,7 +78,7 @@ namespace DotBotCarClient.Views
                 id = id,
                 username = name,
                 password = SecurityHelper.ComputeSHA256(pw),
-                carmodel = (cmbCarModel.SelectedItem as ComboBoxItem)?.Content.ToString()
+                car_model = (cmbCarModel.SelectedItem as ComboBoxItem)?.Content.ToString()
             };
 
             await App.Network.SendAsync(msg);
