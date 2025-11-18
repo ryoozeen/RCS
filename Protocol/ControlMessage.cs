@@ -120,6 +120,5 @@ namespace DotBotCarClient.Protocol
                 _ => JsonSerializer.Deserialize<BaseMessage>(json, options)
             };
         }
-
     }
 }

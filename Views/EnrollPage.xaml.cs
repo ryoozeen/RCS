@@ -81,7 +81,7 @@ namespace DotBotCarClient.Views
                 Id = id,
                 UserName = name,
                 Password = pw,
-                CarModel = "TESLA"      // 필요하면 ComboBox 등으로 입력하게 하면 됨
+                CarModel = (cmbCarModel.SelectedItem as ComboBoxItem)?.Content.ToString()
             };
 
             await App.Network.SendAsync(msg);

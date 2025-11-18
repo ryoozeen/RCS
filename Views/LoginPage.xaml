@@ -38,7 +38,7 @@
 
             <StackPanel>
                 
-                <TextBlock Text="Tesla Mobile App"
+                <TextBlock Text="LOGIN"
                            Style="{StaticResource TeslaTitle}"
                            FontSize="30"/>
 

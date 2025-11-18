@@ -15,9 +15,9 @@ namespace DotBotCarClient
 
             try
             {
-                await Network.ConnectAsync("10.10.21.122", 7000);
+                await Network.ConnectAsync("10.10.21.111", 8888);
 
-                // 🔥 여기서 한번만 등록!
+                // 여기서 한번만 등록
                 Network.OnMessageReceived += Network_OnMessageReceived;
             }
             catch
@@ -28,7 +28,7 @@ namespace DotBotCarClient
             }
         }
 
-        // 🔥 서버에서 메시지 올 때마다 실행되는 전역 라우터
+        // 서버에서 메시지 올 때마다 실행되는 전역 라우터
         private void Network_OnMessageReceived(BaseMessage msg)
         {
             Dispatcher.Invoke(() =>

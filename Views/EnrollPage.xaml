@@ -114,8 +114,8 @@
                 <!-- CAR MODEL -->
                 <TextBlock Text="자동차 모델 명"/>
                 <ComboBox x:Name="cmbCarModel" Style="{StaticResource DarkComboBox}" Height="40" Padding="10" Margin="0,0,0,12" Background="#222" Foreground="White" BorderBrush="#444" BorderThickness="1" FontSize="14" SelectedIndex="0">
-                    <ComboBoxItem Content="테슬라" Style="{StaticResource DarkComboItem}"/>
-                    <ComboBoxItem Content="폴스타" Style="{StaticResource DarkComboItem}"/>
+                    <ComboBoxItem Content="TESLA" Style="{StaticResource DarkComboItem}"/>
+                    <ComboBoxItem Content="POLESTAR" Style="{StaticResource DarkComboItem}"/>
                 </ComboBox>
                 <!-- PASSWORD -->
                 <TextBlock Text="비밀번호"/>

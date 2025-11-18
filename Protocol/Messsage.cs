@@ -30,7 +30,6 @@
     public class BaseMessage
     {
         public MsgType Msg { get; set; }
-        public bool Success { get; set; }
         public string? Reason { get; set; }
     }
     // 회원가입 요청
@@ -98,7 +97,10 @@
     // 상태 전송
     public class StatusReq : BaseMessage
     {
-        public double Charging { get; set; }
+        public bool Charging { get; set; }
+        public bool Parking { get; set; }
+        public bool Driving { get; set; }
+        public double Battery { get; set; }
 
         public StatusReq()
         {
@@ -108,7 +110,7 @@
     // 상태 응답
     public class StatusRes : BaseMessage
     {
-        public bool Level { get; set; }
+        public bool resulted { get; set; }
         public StatusRes()
         {
             Msg = MsgType.STATUS_RES;
