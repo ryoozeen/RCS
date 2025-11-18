@@ -13,6 +13,7 @@ namespace DotBotCarClient.Views
     public partial class StatusPage : Page, IProtocolHandler
     {
         private DispatcherTimer _statusTimer;
+        private DispatcherTimer _parkingTimer;
 
         // 토글 상태 저장
         private bool _isEngineOn = false;
@@ -26,11 +27,23 @@ namespace DotBotCarClient.Views
             // 첫 로드시 상태 요청
             RequestStatus();
 
+            // 최신 시간 반영
+            this.Loaded += (s, e) => UpdateParkingTime();
+
             // 5초마다 지속 요청
             _statusTimer = new DispatcherTimer();
             _statusTimer.Interval = TimeSpan.FromSeconds(5);
             _statusTimer.Tick += (s, e) => RequestStatus();
             _statusTimer.Start();
+
+            // 주차 시간 갱신
+            _parkingTimer = new DispatcherTimer();
+            _parkingTimer.Interval = TimeSpan.FromMinutes(1);
+            _parkingTimer.Tick += (s, e) => UpdateParkingTime();
+            _parkingTimer.Start();
+
+            // 즉시 로드
+            UpdateParkingTime();
 
             // 다른 페이지로 이동 시 타이머 종료
             this.Unloaded += StatusPage_Unloaded;
@@ -101,6 +114,7 @@ namespace DotBotCarClient.Views
             await App.Network.SendAsync(req);
         }
 
+
         // ======================================================
         // STATUS_RES 처리 (UI 업데이트)
         // ======================================================
@@ -117,8 +131,37 @@ namespace DotBotCarClient.Views
                 else if (st.driving) state = "주행 중";
                 else if (st.parking) state = "주차 중";
 
+                int range = (int)(400 * st.battery / 100.0);
+                RangeText.Text = $"Range : {range}km";
+
                 CarStateText.Text = $"차량 상태 : {state}";
             });
+        }
+        // ======================================================
+        // UI - 주차 시간 업데이트
+        // ======================================================
+        private void UpdateParkingTime()
+        {
+            if (!App.IsParked || App.ParkingStartTime == DateTime.MinValue)
+            {
+                LocationText.Text = "주차 위치: 없음";
+                return;
+            }
+
+            int minutesPassed = (int)(DateTime.Now - App.ParkingStartTime).TotalMinutes;
+
+            if (minutesPassed >= 0 && minutesPassed < 60)
+                LocationText.Text = $"주차 위치: 집 ({minutesPassed}분 전)";
+            else
+            {
+                int hours = minutesPassed / 60;
+                int mins = minutesPassed % 60;
+                LocationText.Text = $"주차 위치: 집 ({hours}시간 {mins}분 전)";
+            }
+        }
+        public void ForceUpdateParkingTime()
+        {
+            UpdateParkingTime();
         }
 
         // ======================================================

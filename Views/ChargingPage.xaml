@@ -73,6 +73,7 @@
             <!-- Title -->
             <TextBlock Grid.Column="1"
                        Text="CHARGING"
+                       FontSize="40"
                        Style="{StaticResource TeslaTitle}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
@@ -90,11 +91,12 @@
 
             <!-- 예상 충전 시간 -->
             <TextBlock x:Name="EstTimeText"
-                       Text="1 hr 5 min remaining"
+                       Text="1 hr 05 min remaining"
                        FontSize="18"
+                       FontStyle="Oblique"
                        Foreground="{StaticResource TeslaSecondaryText}"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,25"/>
+                       Margin="0,0,0,10"/>
             <Border Background="#111"
                     BorderBrush="#6F6F6F"
                     BorderThickness="3"
@@ -160,6 +162,7 @@
                        Text="Battery: 60%"
                        Style="{StaticResource TeslaTitle}"
                        FontSize="30"
+                       FontFamily="Segoe UI Semilight"
                        Margin="0,50,0,5"
                        HorizontalAlignment="Center"/>
 
@@ -167,6 +170,7 @@
             <TextBlock x:Name="DriveRangeText"
                        Text="주행 가능 거리: 240 km"
                        Style="{StaticResource TeslaSubText}"
+                       FontFamily="Segoe UI Semilight"
                        FontSize="18"
                        HorizontalAlignment="Center"
                        Margin="0,30,0,10"/>

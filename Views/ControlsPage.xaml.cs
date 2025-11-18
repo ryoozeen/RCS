@@ -1,20 +1,23 @@
-﻿using System.Windows;
+﻿using System;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Threading.Tasks;
+using DotBotCarClient.Protocol;
 
 namespace DotBotCarClient.Views
 {
-    public partial class ControlsPage : Page
+    public partial class ControlsPage : Page, IProtocolHandler
     {
         private int targetTemp = 22;
 
-        private bool airOn = false;
-        private bool heatOn = false;
-        private bool lightOn = false;
+        // 토글 상태
+        private bool _airOn = false;
+        private bool _heatOn = false;
+        private bool _lightOn = false;
 
-        private readonly Brush OnColor = new SolidColorBrush(Color.FromRgb(76, 175, 80)); // 초록색
-        private readonly Brush OffColor = new SolidColorBrush(Color.FromRgb(34, 34, 34)); // #222222
+        private readonly Brush OnColor = new SolidColorBrush(Color.FromRgb(76, 175, 80));
+        private readonly Brush OffColor = new SolidColorBrush(Color.FromRgb(34, 34, 34));
 
         public ControlsPage()
         {
@@ -25,6 +28,9 @@ namespace DotBotCarClient.Views
             ParkBtn.IsEnabled = false;
         }
 
+        // ====================================================
+        // UI : 온도 변경
+        // ====================================================
         private void UpdateTempUI()
         {
             TargetTempText.Text = $"{targetTemp}°C";
@@ -46,46 +52,120 @@ namespace DotBotCarClient.Views
             UpdateTempUI();
         }
 
-
-        // ==========================
-        //   ❄️ Air / Heat / Light
-        // ==========================
-
-        private void Air_Click(object sender, RoutedEventArgs e)
+        // ====================================================
+        // 서버 메시지 처리 (IProtocolHandler)
+        // ====================================================
+        public async void HandleProtocolMessage(BaseMessage msg)
         {
-            airOn = !airOn;
-            AirBtn.Background = airOn ? OnColor : OffColor;
+            switch (msg.msg)
+            {
+                case MsgType.AIR_RES:
+                    var air = msg as AirRes;
+                    if (air != null)
+                    {
+                        _airOn = air.air_status;
+                        AirBtn.Background = _airOn ? OnColor : OffColor;
+                    }
+                    break;
+
+                case MsgType.HEAT_RES:
+                    var heat = msg as HeatRes;
+                    if (heat != null)
+                    {
+                        _heatOn = heat.heat_status;
+                        HeatBtn.Background = _heatOn ? OnColor : OffColor;
+                    }
+                    break;
+
+                case MsgType.LIGHT_RES:
+                    var light = msg as LightRes;
+                    if (light != null)
+                    {
+                        _lightOn = light.light_status;
+                        LightBtn.Background = _lightOn ? OnColor : OffColor;
+                    }
+                    break;
+
+                case MsgType.CONTROL_RES:
+                    var ctrl = msg as ControlRes;
+                    if (ctrl != null)
+                    {
+                        if (ctrl.control_status)
+                        {
+                            App.ParkingStartTime = DateTime.Now;
+                            App.IsParked = true;
+                        }
+                        else
+                        {
+                            App.IsParked = false;
+                        }
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            if (Application.Current.MainWindow is MainWindow mw &&
+                            mw.ContentFrame.Content is StatusPage sp)
+                            {
+                                sp.ForceUpdateParkingTime();
+                            }
+                        });
+                    }
+                    break;
+            }
         }
 
-        private void Heat_Click(object sender, RoutedEventArgs e)
+        // ====================================================
+        // Air / Heat / Light 버튼 → 서버로 요청
+        // ====================================================
+        private async void Air_Click(object sender, RoutedEventArgs e)
         {
-            heatOn = !heatOn;
-            HeatBtn.Background = heatOn ? OnColor : OffColor;
+            _airOn = !_airOn;
+
+            var req = new AirReq
+            {
+                air = _airOn
+            };
+
+            await App.Network.SendAsync(req);
+
+            // 응답에서 실제 반영됨
         }
 
-        private void Light_Click(object sender, RoutedEventArgs e)
+        private async void Heat_Click(object sender, RoutedEventArgs e)
         {
-            lightOn = !lightOn;
-            LightBtn.Background = lightOn ? OnColor : OffColor;
+            _heatOn = !_heatOn;
+
+            var req = new HeatReq
+            {
+                heat = _heatOn
+            };
+
+            await App.Network.SendAsync(req);
         }
 
+        private async void Light_Click(object sender, RoutedEventArgs e)
+        {
+            _lightOn = !_lightOn;
 
-        // ==========================
-        //   🔊 Horn (1~2초 후 복귀)
-        // ==========================
+            var req = new LightReq
+            {
+                light = _lightOn
+            };
 
+            await App.Network.SendAsync(req);
+        }
+
+        // ====================================================
+        // Horn (서버 없이 1.5초 반짝)
+        // ====================================================
         private async void Horn_Click(object sender, RoutedEventArgs e)
         {
-            HornBtn.Background = OnColor;  // 초록색 활성 표시
-            await Task.Delay(1500);        // 1.5초 유지
-            HornBtn.Background = OffColor; // 다시 원상태
+            HornBtn.Background = OnColor;
+            await Task.Delay(1500);
+            HornBtn.Background = OffColor;
         }
 
-
-        // ==========================
-        //   Valet Mode
-        // ==========================
-
+        // ====================================================
+        // Valet Mode
+        // ====================================================
         private void ValetToggle_Checked(object sender, RoutedEventArgs e)
         {
             DriveBtn.IsEnabled = true;
@@ -101,37 +181,44 @@ namespace DotBotCarClient.Views
             ParkBtn.Background = OffColor;
         }
 
-
-        // ==========================
-        //   Drive (5초 후 원상 복귀)
-        // ==========================
-
+        // ====================================================
+        // Drive / Park → 서버 전송 + 5초 유지
+        // ====================================================
         private async void DriveBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (ValetToggle.IsChecked != true)
-                return;
+            if (ValetToggle.IsChecked != true) return;
 
-            DriveBtn.Background = OnColor;    // 초록색
-            await Task.Delay(5000);           // 5초 유지
-            DriveBtn.Background = OffColor;   // 원상 복귀
+            ParkBtn.Background = OffColor;
+            DriveBtn.Background = OnColor;
+
+            var req = new ControlReq
+            {
+                control = false
+            };
+            await App.Network.SendAsync(req);
+
+            await Task.Delay(5000);
         }
-
-
-        // ==========================
-        //   Park (5초 후 원상 복귀)
-        // ==========================
 
         private async void ParkBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (ValetToggle.IsChecked != true)
-                return;
+            if (ValetToggle.IsChecked != true) return;
 
-            ParkBtn.Background = OnColor;     // 초록색
-            await Task.Delay(5000);           // 5초 유지
-            ParkBtn.Background = OffColor;    // 원상 복귀
+            DriveBtn.Background = OffColor;
+            ParkBtn.Background = OnColor;
+
+            var req = new ControlReq
+            {
+                control = true
+            };
+            await App.Network.SendAsync(req);
+
+            await Task.Delay(5000);
         }
 
-
+        // ====================================================
+        // Navigation
+        // ====================================================
         private void Back_Click(object sender, RoutedEventArgs e)
         {
             NavigationService?.GoBack();

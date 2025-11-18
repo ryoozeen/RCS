@@ -1,4 +1,5 @@
 ﻿using System;
+using System.DirectoryServices.ActiveDirectory;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -66,13 +67,19 @@ namespace DotBotCarClient.Views
             }
             else
             {
-                ChargeStatusText.Text = string.Empty;
+                ChargeStatusText.Text = "충전 대기 중";
             }
         }
 
         public void UpdateBattery(double percent)
         {
             BatteryPercentText.Text = $"Battery: {percent:F0}%";
+
+            int totalPercent = (int)percent;
+            int hour = totalPercent / 60;
+            int minute = totalPercent % 60;
+            EstTimeText.Text = $"{hour}hr {minute}min remaining";
+
             AnimateBattery(percent);
 
             double range = 400 * (percent / 100.0);

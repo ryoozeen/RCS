@@ -2,13 +2,16 @@
 using DotBotCarClient.Protocol;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace DotBotCarClient
 {
     public partial class App : Application
     {
         public static NetworkClient Network { get; private set; } = new NetworkClient();
-
+        public static bool IsParked = false;
+        public static DateTime ParkingStartTime;
+        
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);

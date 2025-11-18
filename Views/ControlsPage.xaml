@@ -74,6 +74,7 @@
             <!-- 📌 Center Title -->
             <TextBlock Grid.Column="1"
                Text="CONTROLS"
+               FontSize="40"
                Style="{StaticResource TeslaTitle}"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"/>
