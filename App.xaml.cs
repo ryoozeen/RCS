@@ -23,6 +23,14 @@ namespace DotBotCarClient
 
                 // 여기서 한번만 등록
                 Network.OnMessageReceived += Network_OnMessageReceived;
+
+                // 클라이언트 식별자 전송
+                var req = new ClientIdentify
+                {
+                    client_name = "RCS"
+                };
+
+                await Network.SendAsync(req);
             }
             catch
             {

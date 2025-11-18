@@ -159,7 +159,7 @@
 
             <!-- 배터리 % -->
             <TextBlock x:Name="BatteryPercentText"
-                       Text="Battery: 60%"
+                       Text="Battery: 0%"
                        Style="{StaticResource TeslaTitle}"
                        FontSize="30"
                        FontFamily="Segoe UI Semilight"

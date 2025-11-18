@@ -155,6 +155,8 @@ namespace DotBotCarClient.Protocol
 
                 BaseMessage? result = type switch
                 {
+                    MsgType.CLIENT_IDENTIFY => JsonSerializer.Deserialize<ClientIdentify>(json, options),
+
                     MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, options),
                     MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, options),
 

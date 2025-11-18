@@ -114,10 +114,10 @@
 
             <TextBlock Text="My Model S"
                        Style="{StaticResource TeslaTitle}"
-                       FontSize="40"
+                       FontSize="34"
                        FontStyle="Oblique"
-                       FontWeight="SemiBold"
-                       FontFamily="Segoe UI"
+                       FontWeight="Thin"
+                       FontFamily="mo"
                        HorizontalAlignment="Center"/>
 
             <TextBlock x:Name="CarStateText"

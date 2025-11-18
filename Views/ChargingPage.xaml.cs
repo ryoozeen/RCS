@@ -24,7 +24,7 @@ namespace DotBotCarClient.Views
             // 🔁 2초마다 상태 요청 보내도록 타이머 활성화
             _statusTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(2)
+                Interval = TimeSpan.FromSeconds(3)
             };
             _statusTimer.Tick += StatusTimer_Tick;
             _statusTimer.Start();
@@ -63,7 +63,7 @@ namespace DotBotCarClient.Views
 
             if (isCharging)
             {
-                ChargeStatusText.Text = percent >= 100 ? "충전 완료" : "충전 중…";
+                ChargeStatusText.Text = percent >= 100 ? "충전 완료" : "충전 중";
             }
             else
             {

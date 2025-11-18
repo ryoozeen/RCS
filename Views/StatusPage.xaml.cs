@@ -28,11 +28,15 @@ namespace DotBotCarClient.Views
             RequestStatus();
 
             // 최신 시간 반영
-            this.Loaded += (s, e) => UpdateParkingTime();
-
+            this.Loaded += (s, e) =>
+            {
+                _statusTimer?.Start();
+                _parkingTimer?.Start();
+                UpdateParkingTime();
+            };
             // 5초마다 지속 요청
             _statusTimer = new DispatcherTimer();
-            _statusTimer.Interval = TimeSpan.FromSeconds(5);
+            _statusTimer.Interval = TimeSpan.FromSeconds(3);
             _statusTimer.Tick += (s, e) => RequestStatus();
             _statusTimer.Start();
 
@@ -138,17 +142,19 @@ namespace DotBotCarClient.Views
             });
         }
         // ======================================================
-        // UI - 주차 시간 업데이트
+        // UI - 주차 업데이트
         // ======================================================
         private void UpdateParkingTime()
         {
             if (!App.IsParked || App.ParkingStartTime == DateTime.MinValue)
             {
+                CarStateText.Text = "차량 상태 : 주행 중";
                 LocationText.Text = "주차 위치: 없음";
                 return;
             }
 
             int minutesPassed = (int)(DateTime.Now - App.ParkingStartTime).TotalMinutes;
+            CarStateText.Text = "차량 상태 : 주차 중";
 
             if (minutesPassed >= 0 && minutesPassed < 60)
                 LocationText.Text = $"주차 위치: 집 ({minutesPassed}분 전)";

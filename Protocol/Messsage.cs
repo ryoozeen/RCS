@@ -3,6 +3,7 @@
     // 메시지 타입
     public enum MsgType
     {
+        CLIENT_IDENTIFY,
         ENROLL_REQ,
         ENROLL_RES,
         LOGIN_REQ,
@@ -33,6 +34,14 @@
     {
         public MsgType msg { get; set; }
         public string? reason { get; set; }
+    }
+    public class ClientIdentify : BaseMessage
+    {
+        public string? client_name { get; set; }
+        public ClientIdentify()
+        {
+            msg = MsgType.CLIENT_IDENTIFY;
+        }
     }
     // 회원가입 요청
     public class EnrollReq : BaseMessage
