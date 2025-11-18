@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using MyApp.Helpers;
 
 namespace DotBotCarClient.Views
 {
@@ -29,10 +30,6 @@ namespace DotBotCarClient.Views
         {
             if (msg is EnrollRes res)
             {
-                MessageBox.Show(res.Registered
-                    ? "회원가입 성공"
-                    : $"회원가입 실패: {res.Reason}");
-
                 if (res.Registered)
                 {
                     // 🔹 회원가입 성공 시 → 로그인 페이지로 이동
@@ -80,7 +77,7 @@ namespace DotBotCarClient.Views
             {
                 Id = id,
                 UserName = name,
-                Password = pw,
+                Password = SecurityHelper.ComputeSHA256(pw),
                 CarModel = (cmbCarModel.SelectedItem as ComboBoxItem)?.Content.ToString()
             };
 
