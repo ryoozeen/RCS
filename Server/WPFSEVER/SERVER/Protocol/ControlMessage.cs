@@ -4,40 +4,51 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading;         
 using System.Threading.Tasks;
 
 namespace SERVER.Protocol
 {
     public class ControlMessage
     {
-        // 1) 메시지 종류 (ENROLL_REQ, LOGIN_REQ, DOOR_REQ, ... )
+        // 1) 메시지 종류
+        // ENROLL_REQ, LOGIN_REQ, CLIENT_IDENTIFY, DOOR_REQ, STATUS_RES 
         public string? Msg { get; set; }
 
-        // 2) 사용자 정보 (회원가입/로그인에서 사용)
-        public string? Id { get; set; }           // 로그인 아이디
-        public string? Password { get; set; }     // 비밀번호
-        public string? UserName { get; set; }     // 사용자 이름
-        public string? CarInfo { get; set; }      // 차량 정보 (EV6 등)
+        // 2) 식별 및 인증 (CLIENT_IDENTIFY, ENROLL_REQ, LOGIN_REQ)
+        public string? Id { get; set; }
+        public string? Password { get; set; }
+        public string? UserName { get; set; }
+        public string? CarModel { get; set; }    
 
-        // 3) 차량/제어 공통
-        public int VehicleId { get; set; }       // 차량 번호 (1, 2, 3...)
-        public string? Command { get; set; }      // ON/OFF, OPEN/CLOSE, UP/DOWN 등
+        // 3) 제어 요청용 (REQ)
+        //  True/False (ON/OFF, OPEN/CLOSE) 요청용
+        public bool CommandValue { get; set; }
+        // 온도(int) 요청용 (CLI_REQ)
+        public int CommandTemp { get; set; }
+      
+        public string? Command { get; set; }
 
-        // 4) 응답 공통
-        public bool Success { get; set; }        // True / False
-        public string? Reason { get; set; }       // 실패 이유나 상태 메시지
-        public string? CarModel { get; set; }     // LOGIN_RES 에서 내려줄 차량 모델명
+        // 4) 응답 공통 (RES)
+        public bool Success { get; set; }       // True / False
+        public string? Reason { get; set; }      // 실패 이유
 
-        // 5) 상태 응답용 (STATUS_RES 등에서 사용 가능)
-        public string? DoorStatus { get; set; }   // OPEN/CLOSE
-        public string? StartStatus { get; set; }  // ON/OFF
-        public string? AirStatus { get; set; }    // ON/OFF
-        public string? HeatStatus { get; set; }   // ON/OFF
+        // 5) 상태 응답용 (STATUS_RES)
+        public string? DoorStatus { get; set; }    // OPEN/CLOSE
+        public string? StartStatus { get; set; }   // ON/OFF
+        public string? AirStatus { get; set; }     // ON/OFF
+        public string? HeatStatus { get; set; }    // ON/OFF
         public string? ChargingStatus { get; set; } // ON/OFF
-        public int BatteryLevel { get; set; }    // 배터리 잔량(0~100)
+        public int BatteryLevel { get; set; }      // 배터리 잔량(0~100)
+
+        //  추가된 상태값
+        public string? TrunkStatus { get; set; }   // OPEN/CLOSE
+        public string? LightStatus { get; set; }   // ON/OFF
+        public int CliTemp { get; set; }           // 현재 설정 온도 (CLI_RES)
+
 
         // 메시지 직렬화 (송신용)
-        // ControlMessage → JSON → 바이트 → 길이 헤더 + 바이트
+        // (이 메서드는 수정할 필요가 없습니다)
         public static byte[] SerializeMessage(ControlMessage message)
         {
             // 1. JSON 직렬화
@@ -60,15 +71,19 @@ namespace SERVER.Protocol
         }
 
         //  메시지 역직렬화 (수신용)
-        // 길이 헤더 읽기 → 바디 바이트 읽기 → JSON → ControlMessage
-        public static async Task<ControlMessage?> DeserializeMessageAsync(NetworkStream stream)
+        // CancellationToken 매개변수 추가
+        public static async Task<ControlMessage?> DeserializeMessageAsync(
+            NetworkStream stream,
+            CancellationToken cancellationToken)
         {
             // 최대 메시지 크기 제한 (100KB)
             const int MAX_MESSAGE_SIZE = 1024 * 100;
 
             // 1. 길이 헤더 읽기 (4바이트)
             byte[] lengthBytes = new byte[4];
-            int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4);
+
+            // CancellationToken 전달
+            int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4, cancellationToken);
 
             if (bytesRead != 4)
             {
@@ -100,15 +115,17 @@ namespace SERVER.Protocol
 
             while (totalBytesRead < messageLength)
             {
+                // CancellationToken 전달
                 bytesRead = await stream.ReadAsync(
                     messageBytes,
                     totalBytesRead,
-                    messageLength - totalBytesRead
+                    messageLength - totalBytesRead,
+                    cancellationToken // CancellationToken 전달
                 );
 
-                if (bytesRead == 0)
+                if (bytesRead == 0 || cancellationToken.IsCancellationRequested)
                 {
-                    return null; // 연결 끊김
+                    return null; // 연결 끊김 또는 취소됨
                 }
 
                 totalBytesRead += bytesRead;
@@ -118,9 +135,16 @@ namespace SERVER.Protocol
             string json = Encoding.UTF8.GetString(messageBytes);
 
             // 6. JSON → ControlMessage
-            ControlMessage? message = JsonSerializer.Deserialize<ControlMessage>(json);
-
-            return message;
+            try
+            {
+                ControlMessage? message = JsonSerializer.Deserialize<ControlMessage>(json);
+                return message;
+            }
+            catch (JsonException)
+            {
+                // JSON 파싱 실패
+                return null;
+            }
         }
     }
 }
