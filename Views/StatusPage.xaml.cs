@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using System.Windows.Threading;
+using System.Windows.Media;
 using DotBotCarClient.Protocol;
 using DotBotCarClient.Network;
 
@@ -13,6 +14,11 @@ namespace DotBotCarClient.Views
     {
         private DispatcherTimer _statusTimer;
 
+        // 토글 상태 저장
+        private bool _isEngineOn = false;
+        private bool _isDoorOpen = false;
+        private bool _isTrunkOpen = false;
+
         public StatusPage()
         {
             InitializeComponent();
@@ -20,17 +26,16 @@ namespace DotBotCarClient.Views
             // 첫 로드시 상태 요청
             RequestStatus();
 
-            // 타이머로 5초마다 요청
+            // 5초마다 지속 요청
             _statusTimer = new DispatcherTimer();
             _statusTimer.Interval = TimeSpan.FromSeconds(5);
             _statusTimer.Tick += (s, e) => RequestStatus();
             _statusTimer.Start();
 
-            // 페이지 벗어날 때 정지되도록
+            // 다른 페이지로 이동 시 타이머 종료
             this.Unloaded += StatusPage_Unloaded;
         }
 
-        // 페이지 Unloaded 시 타이머 정지
         private void StatusPage_Unloaded(object sender, RoutedEventArgs e)
         {
             if (_statusTimer != null)
@@ -40,12 +45,67 @@ namespace DotBotCarClient.Views
         // ======================================================
         // 서버 응답 처리
         // ======================================================
-        public void HandleProtocolMessage(BaseMessage msg)
+        public async void HandleProtocolMessage(BaseMessage msg)
         {
-            if (msg.msg != MsgType.STATUS_RES)
-                return;
+            switch (msg.msg)
+            {
+                case MsgType.STATUS_RES:
+                    HandleStatusRes(msg as StatusRes);
+                    break;
 
-            var st = msg as StatusRes;
+                case MsgType.START_RES:
+                    {
+                        var res = msg as StartRes;
+                        if (res != null)
+                        {
+                            _isEngineOn = res.active_status;
+                            await UpdateStartButtonColor(_isEngineOn);
+                        }
+                        break;
+                    }
+
+                case MsgType.DOOR_RES:
+                    {
+                        var res = msg as DoorRes;
+                        if (res != null)
+                        {
+                            _isDoorOpen = res.door_status;
+                            await UpdateDoorButtonColor(_isDoorOpen);
+                        }
+                        break;
+                    }
+
+                case MsgType.TRUNK_RES:
+                    {
+                        var res = msg as TrunkRes;
+                        if (res != null)
+                        {
+                            _isTrunkOpen = res.trunk_status;
+                            await UpdateTrunkButtonColor(_isTrunkOpen);
+                        }
+                        break;
+                    }
+            }
+        }
+
+        // ======================================================
+        // 상태 요청
+        // ======================================================
+        private async void RequestStatus()
+        {
+            var req = new StatusReq
+            {
+                car_status = true
+            };
+
+            await App.Network.SendAsync(req);
+        }
+
+        // ======================================================
+        // STATUS_RES 처리 (UI 업데이트)
+        // ======================================================
+        private void HandleStatusRes(StatusRes? st)
+        {
             if (st == null) return;
 
             Dispatcher.Invoke(() =>
@@ -62,40 +122,75 @@ namespace DotBotCarClient.Views
         }
 
         // ======================================================
-        // 상태 요청
+        // 버튼 색 변경 함수들
         // ======================================================
-        private async void RequestStatus()
+
+        private async Task UpdateStartButtonColor(bool isOn)
         {
-            var req = new StatusReq
+            await Dispatcher.InvokeAsync(() =>
             {
-                car_status = true
+                StartBorder.Background = isOn
+                    ? new SolidColorBrush(Color.FromRgb(41, 128, 255))
+                    : new SolidColorBrush(Color.FromRgb(34, 34, 34));
+            });
+        }
+        private async Task UpdateDoorButtonColor(bool isOpen)
+        {
+            await Dispatcher.InvokeAsync(() =>
+            {
+                LockBorder.Background = isOpen
+                    ? new SolidColorBrush(Color.FromRgb(39, 174, 96))
+                    : new SolidColorBrush(Color.FromRgb(34, 34, 34));
+            });
+        }
+        private async Task UpdateTrunkButtonColor(bool isOpen)
+        {
+            await Dispatcher.InvokeAsync(() =>
+            {
+                TrunkBorder.Background = isOpen
+                    ? new SolidColorBrush(Color.FromRgb(243, 156, 18))
+                    : new SolidColorBrush(Color.FromRgb(34, 34, 34));
+            });
+        }
+
+        // ======================================================
+        // 버튼 클릭 → 서버 전송 (토글 방식)
+        // ======================================================
+
+        // ★ 시동 토글
+        private async void start_Click(object sender, RoutedEventArgs e)
+        {
+            var req = new StartReq
+            {
+                active = !_isEngineOn
             };
 
             await App.Network.SendAsync(req);
         }
 
-        // ==========================================================
-        // 버튼 → 서버 전송
-        // ==========================================================
-        private async void start_Click(object sender, RoutedEventArgs e)
-        {
-            var req = new StartReq { active = true };
-            await App.Network.SendAsync(req);
-        }
-
+        // ★ 문 토글
         private async void Lock_Click(object sender, RoutedEventArgs e)
         {
-            var req = new DoorReq { door = true };
+            var req = new DoorReq
+            {
+                door = !_isDoorOpen
+            };
+
             await App.Network.SendAsync(req);
         }
 
+        // ★ 트렁크 토글
         private async void Trunk_Click(object sender, RoutedEventArgs e)
         {
-            var req = new TrunkReq { trunk = true };
+            var req = new TrunkReq
+            {
+                trunk = !_isTrunkOpen
+            };
+
             await App.Network.SendAsync(req);
         }
 
-        // 하단 네비게이션
+        // 네비게이션
         private void GoCharging(object sender, RoutedEventArgs e)
         {
             NavigationService?.Navigate(new ChargingPage());
@@ -105,8 +200,5 @@ namespace DotBotCarClient.Views
         {
             NavigationService?.Navigate(new ControlsPage());
         }
-
-
-
     }
 }

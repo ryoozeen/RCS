@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using DotBotCarClient.Protocol;
@@ -97,13 +98,16 @@ namespace DotBotCarClient.Views
         {
             _statusTimer.Stop();
 
+            StopChargingBtn.Background = new SolidColorBrush(Color.FromRgb(200, 50, 50));
+
             if (App.Network.IsConnected)
             {
                 var req = new StopChargingReq { stop = true };
                 await App.Network.SendAsync(req);
             }
 
-            MessageBox.Show("충전 중지 요청을 보냈습니다.");
+            await Task.Delay(5000);
+            StopChargingBtn.Background = new SolidColorBrush(Color.FromRgb(34, 34, 34));
         }
 
         private void Back_Click(object sender, RoutedEventArgs e)

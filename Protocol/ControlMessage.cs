@@ -161,6 +161,18 @@ namespace DotBotCarClient.Protocol
                     MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json, options),
                     MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json, options),
 
+                    MsgType.START_REQ => JsonSerializer.Deserialize<StartReq>(json, options),
+                    MsgType.START_RES => JsonSerializer.Deserialize<StartRes>(json, options),
+
+                    MsgType.DOOR_REQ => JsonSerializer.Deserialize<DoorReq>(json, options),
+                    MsgType.DOOR_RES => JsonSerializer.Deserialize<DoorRes>(json, options),
+
+                    MsgType.TRUNK_REQ => JsonSerializer.Deserialize<TrunkReq>(json, options),
+                    MsgType.TRUNK_RES => JsonSerializer.Deserialize<TrunkRes>(json, options),
+
+                    MsgType.STOP_CHARGING_REQ => JsonSerializer.Deserialize<StopChargingReq>(json, options),
+                    MsgType.STOP_CHARGING_RES => JsonSerializer.Deserialize<StopChargingRes>(json, options),
+
                     MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
                     MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
 
