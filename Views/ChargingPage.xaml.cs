@@ -17,6 +17,8 @@ namespace DotBotCarClient.Views
 
             UpdateChargingStatus(false, 0);
 
+            SendInitialStatusRequest(); // 페이지 변경 시 상태 요청
+
             // 🔁 2초마다 상태 요청 보내도록 타이머 활성화
             _statusTimer = new DispatcherTimer
             {
@@ -25,7 +27,15 @@ namespace DotBotCarClient.Views
             _statusTimer.Tick += StatusTimer_Tick;
             _statusTimer.Start();
         }
+        // 초기 요청
+        private async void SendInitialStatusRequest()
+        {
+            if (!App.Network.IsConnected)
+                return;
 
+            var req = new StatusReq();
+            await App.Network.SendAsync(req);
+        }
         // 🔹 타이머가 실행될 때마다 서버에 STATUS_REQ 보내기
         private async void StatusTimer_Tick(object? sender, EventArgs e)
         {
