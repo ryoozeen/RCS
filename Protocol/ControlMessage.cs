@@ -117,6 +117,7 @@ namespace DotBotCarClient.Protocol
                 MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
                 MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
 
+
                 // 추가
                 MsgType.START_REQ => JsonSerializer.Deserialize<StartReq>(json, options),
                 MsgType.START_RES => JsonSerializer.Deserialize<StartRes>(json, options),

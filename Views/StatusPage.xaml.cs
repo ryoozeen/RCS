@@ -1,6 +1,9 @@
-﻿using System.Windows;
+﻿using System;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 using DotBotCarClient.Protocol;
 using DotBotCarClient.Network;
 
@@ -8,30 +11,43 @@ namespace DotBotCarClient.Views
 {
     public partial class StatusPage : Page, IProtocolHandler
     {
+        private DispatcherTimer _statusTimer;
+
         public StatusPage()
         {
             InitializeComponent();
 
-            // 초기 테스트용 데이터는 그대로 유지
-            UpdateTemperature(22, 18);
-            UpdateRange(320);
-            UpdateLocation("집", "2분 전");
-            UpdateLastTrip(15.2);
+            // 첫 로드시 상태 요청
+            RequestStatus();
+
+            // 타이머로 5초마다 요청
+            _statusTimer = new DispatcherTimer();
+            _statusTimer.Interval = TimeSpan.FromSeconds(5);
+            _statusTimer.Tick += (s, e) => RequestStatus();
+            _statusTimer.Start();
+
+            // 페이지 벗어날 때 정지되도록
+            this.Unloaded += StatusPage_Unloaded;
         }
 
-        // ==========================================================
-        // 서버 메시지 처리 (STATUS_REQ 푸시 업데이트)
-        // ==========================================================
-        public async void HandleProtocolMessage(BaseMessage msg)
+        // 페이지 Unloaded 시 타이머 정지
+        private void StatusPage_Unloaded(object sender, RoutedEventArgs e)
         {
-            if (msg.Msg != MsgType.STATUS_REQ)
+            if (_statusTimer != null)
+                _statusTimer.Stop();
+        }
+
+        // ======================================================
+        // 서버 응답 처리
+        // ======================================================
+        public void HandleProtocolMessage(BaseMessage msg)
+        {
+            if (msg.Msg != MsgType.STATUS_RES)
                 return;
 
-            var st = msg as StatusReq;
-            if (st == null)
-                return;
+            var st = msg as StatusRes;
+            if (st == null) return;
 
-            // ---------- UI 업데이트 ----------
             Dispatcher.Invoke(() =>
             {
                 BatteryText.Text = $"{st.Battery}%";
@@ -43,62 +59,43 @@ namespace DotBotCarClient.Views
 
                 CarStateText.Text = $"차량 상태 : {state}";
             });
+        }
 
-            // ---------- 서버에 "정상 수신" 응답 ----------
-            var res = new StatusRes { resulted = true };
-            await App.Network.SendAsync(res);
+        // ======================================================
+        // 상태 요청
+        // ======================================================
+        private async void RequestStatus()
+        {
+            var req = new StatusReq
+            {
+                resulted = true
+            };
+
+            await App.Network.SendAsync(req);
         }
 
         // ==========================================================
-        // 테스트 데이터용 UI 함수들 (그대로 유지)
+        // 버튼 → 서버 전송
         // ==========================================================
-
-        public void UpdateTemperature(int indoor, int outdoor)
+        private async void start_Click(object sender, RoutedEventArgs e)
         {
-            TempText.Text = $"실내 {indoor}°C";
-            OutTempText.Text = $"실외 {outdoor}°C";
+            var req = new StartReq { Active = true };
+            await App.Network.SendAsync(req);
         }
 
-        public void UpdateRange(int range)
+        private async void Lock_Click(object sender, RoutedEventArgs e)
         {
-            RangeText.Text = $"Range: {range} km";
+            var req = new DoorReq { Open = true };
+            await App.Network.SendAsync(req);
         }
 
-        public void UpdateLocation(string location, string time)
+        private async void Trunk_Click(object sender, RoutedEventArgs e)
         {
-            LocationText.Text = $"주차 위치: {location} ({time})";
+            var req = new TrunkReq { Open = true };
+            await App.Network.SendAsync(req);
         }
 
-        public void UpdateLastTrip(double distance)
-        {
-            LastTripDistanceText.Text = $"{distance:F1} km";
-        }
-
-        public void UpdateStatus(int battery, string state)
-        {
-            BatteryText.Text = $" {battery}%";
-            CarStateText.Text = $"차량 상태 : {state}";
-        }
-
-        // ==========================================================
-        // 버튼 이벤트 (그대로 유지)
-        // ==========================================================
-
-        private void start_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("시동 제어 예정");
-        }
-
-        private void Lock_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("문 잠금 / 해제 예정");
-        }
-
-        private void Trunk_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("트렁크 열기 / 닫기 예정");
-        }
-
+        // 하단 네비게이션
         private void GoCharging(object sender, RoutedEventArgs e)
         {
             NavigationService?.Navigate(new ChargingPage());
@@ -108,5 +105,8 @@ namespace DotBotCarClient.Views
         {
             NavigationService?.Navigate(new ControlsPage());
         }
+
+
+
     }
 }

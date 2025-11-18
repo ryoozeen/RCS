@@ -4,9 +4,71 @@
       Style="{StaticResource TeslaPage}"
       Title="StatusPage">
 
+    <!-- ===========================================================
+         PAGE.RESOURCES (올바른 위치)
+    ============================================================ -->
+    <Page.Resources>
+
+        <!-- 글로시 버튼 스타일 -->
+        <Style x:Key="GlossyButton" TargetType="Button">
+            <Setter Property="Background" Value="#222"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <!-- 기본 배경 -->
+                            <Border x:Name="MainBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="2"
+                                    CornerRadius="10"/>
+
+                            <!-- 글로시 반사 -->
+                            <Border CornerRadius="10"
+                                    Margin="2"
+                                    Background="#30FFFFFF"
+                                    Height="20"
+                                    VerticalAlignment="Top"/>
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- 애니메이션 -->
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="MainBorder"
+                                        Property="BorderBrush"
+                                        Value="#00FFD1"/>
+                            </Trigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#444"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+        </Style>
+
+    </Page.Resources>
+
+
+
+    <!-- ===========================================================
+         ROOT GRID + PAGE ANIMATION
+    ============================================================ -->
     <Grid x:Name="RootGrid">
 
-        <!-- 페이지 등장 애니메이션 -->
         <Grid.RenderTransform>
             <TranslateTransform X="40"/>
         </Grid.RenderTransform>
@@ -16,20 +78,21 @@
                 <BeginStoryboard>
                     <Storyboard>
                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                         From="0" To="1" Duration="0:0:0.4"/>
+                                         From="0" To="1"
+                                         Duration="0:0:0.4"/>
 
                         <DoubleAnimation Storyboard.TargetProperty="(Grid.RenderTransform).(TranslateTransform.X)"
-                                         From="40" To="0" Duration="0:0:0.4"/>
+                                         From="40" To="0"
+                                         Duration="0:0:0.4"/>
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
         </Grid.Triggers>
 
 
-        <!-- =============================
-             화면 구조
-        ==============================-->
-
+        <!-- ===========================================================
+             LAYOUT ROWS
+        ============================================================ -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -38,13 +101,13 @@
             <RowDefinition Height="Auto"/>
             <!-- Controls -->
             <RowDefinition Height="Auto"/>
-            <!-- Navigation Bar -->
+            <!-- Bottom Nav -->
         </Grid.RowDefinitions>
 
 
-        <!-- =============================
-             1) HEADER
-        ==============================-->
+        <!-- ===========================================================
+             1) HEADER + BATTERY
+        ============================================================ -->
         <StackPanel Grid.Row="0"
                     Margin="20,40,20,10"
                     HorizontalAlignment="Center">
@@ -60,12 +123,9 @@
                        HorizontalAlignment="Center"
                        Margin="0,3,0,10"/>
 
-
-            <!-- 중앙정렬된 배터리 표시 -->
+            <!-- 배터리 -->
             <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        x:Name="BatteryPanel">
-
+                        HorizontalAlignment="Center">
                 <Image x:Name="BatteryIcon"
                        Source="/Assets/battery.png"
                        Width="28"
@@ -81,21 +141,17 @@
                            VerticalAlignment="Center"/>
             </StackPanel>
 
-            <!-- 주행 가능 거리 -->
             <TextBlock x:Name="RangeText"
                        Text="Range: 320 km"
                        Style="{StaticResource TeslaSubText}"
-                       FontSize="16"
                        HorizontalAlignment="Center"
                        Margin="0,8,0,0"/>
-
         </StackPanel>
 
 
-
-        <!-- =============================
-             추가 정보 (온도, 위치, 최근 이동)
-        ==============================-->
+        <!-- ===========================================================
+             1-2) 온도/최근 이동
+        ============================================================ -->
         <Grid Grid.Row="0"
               Margin="20,0,20,0"
               VerticalAlignment="Bottom">
@@ -105,9 +161,8 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <!-- 온도 정보 -->
-            <StackPanel Grid.Column="0"
-                        HorizontalAlignment="Left">
+            <!-- 온도 -->
+            <StackPanel Grid.Column="0" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="🌡️ " FontSize="14"/>
                     <TextBlock x:Name="TempText"
@@ -123,9 +178,8 @@
                            Opacity="0.7"/>
             </StackPanel>
 
-            <!-- 최근 이동 거리 -->
-            <StackPanel Grid.Column="1"
-                        HorizontalAlignment="Right">
+            <!-- 최근 이동 -->
+            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="🚗 " FontSize="14"/>
                     <TextBlock x:Name="LastTripText"
@@ -133,6 +187,7 @@
                                Style="{StaticResource TeslaSubText}"
                                FontSize="13"/>
                 </StackPanel>
+
                 <TextBlock x:Name="LastTripDistanceText"
                            Text="15.2 km"
                            Style="{StaticResource TeslaSubText}"
@@ -141,14 +196,14 @@
                            HorizontalAlignment="Right"
                            Opacity="0.7"/>
             </StackPanel>
+
         </Grid>
 
 
 
-        <!-- =============================
-             2) CAR IMAGE with Gradient Background
-        ==============================-->
-
+        <!-- ===========================================================
+             2) CAR IMAGE & GLOW BACKGROUND
+        ============================================================ -->
         <Border Grid.Row="1"
                 Margin="30,10,30,30"
                 Background="Transparent"
@@ -156,8 +211,10 @@
                 VerticalAlignment="Top">
 
             <Grid>
-                <!-- 그라데이션 배경 효과 -->
-                <Ellipse Width="280" Height="280"
+
+                <!-- Glow -->
+                <Ellipse Width="280"
+                         Height="280"
                          VerticalAlignment="Center"
                          HorizontalAlignment="Center"
                          Margin="0,20,0,0">
@@ -170,7 +227,7 @@
                     </Ellipse.Fill>
                 </Ellipse>
 
-                <!-- 자동차 이미지 -->
+                <!-- Car Image -->
                 <Image x:Name="CarImage"
                        Source="/Assets/car.png"
                        Stretch="Uniform"
@@ -181,36 +238,36 @@
 
 
 
-        <!-- =============================
-             3) CONTROL ICONS (Start/Lock/Trunk)
-        ==============================-->
+        <!-- ===========================================================
+             3) CONTROL BUTTONS
+        ============================================================ -->
         <StackPanel Grid.Row="2"
                     Margin="0,0,0,15">
 
-            <!-- 차량 위치 정보 -->
+            <!-- 위치 정보 -->
             <Border Background="{StaticResource TeslaBox}"
                     CornerRadius="12"
                     Padding="15,10"
                     Margin="20,0,20,15">
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Center">
-                    <TextBlock Text="📍 " FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock Text="📍 " FontSize="16"/>
                     <TextBlock x:Name="LocationText"
                                Text="주차 위치: 집 (2분 전)"
                                Style="{StaticResource TeslaSubText}"
-                               FontSize="14"
-                               VerticalAlignment="Center"/>
+                               FontSize="14"/>
                 </StackPanel>
             </Border>
 
-            <!-- 컨트롤 아이콘들 -->
+            <!-- 버튼 3개 (Start / Lock / Trunk) -->
             <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Center"
+                        Margin="0,5,0,0">
 
-                <!-- START -->
-                <Border Style="{StaticResource TeslaIconBox}"
-                        Margin="8">
-                    <Button Background="Transparent"
+                <!-- Start -->
+                <Border Style="{StaticResource TeslaIconBox}" Margin="8">
+                    <Button x:Name="StartBtn"
+                            Background="Transparent"
                             BorderBrush="Transparent"
                             Click="start_Click">
                         <StackPanel>
@@ -222,10 +279,10 @@
                     </Button>
                 </Border>
 
-                <!-- LOCK -->
-                <Border Style="{StaticResource TeslaIconBox}"
-                        Margin="8">
-                    <Button Background="Transparent"
+                <!-- Lock -->
+                <Border Style="{StaticResource TeslaIconBox}" Margin="8">
+                    <Button x:Name="LockBtn"
+                            Background="Transparent"
                             BorderBrush="Transparent"
                             Click="Lock_Click">
                         <StackPanel>
@@ -237,10 +294,10 @@
                     </Button>
                 </Border>
 
-                <!-- TRUNK -->
-                <Border Style="{StaticResource TeslaIconBox}"
-                        Margin="8">
-                    <Button Background="Transparent"
+                <!-- Trunk -->
+                <Border Style="{StaticResource TeslaIconBox}" Margin="8">
+                    <Button x:Name="TrunkBtn"
+                            Background="Transparent"
                             BorderBrush="Transparent"
                             Click="Trunk_Click">
                         <StackPanel>
@@ -253,14 +310,14 @@
                 </Border>
 
             </StackPanel>
+
         </StackPanel>
 
 
 
-        <!-- =============================
+        <!-- ===========================================================
              4) NAVIGATION BAR
-        ==============================-->
-
+        ============================================================ -->
         <Grid Grid.Row="3"
               Height="60"
               Background="{StaticResource TeslaBox}">

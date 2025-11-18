@@ -94,23 +94,25 @@
             Msg = MsgType.DOOR_RES;
         }
     }
-    // 상태 전송
+
+    // 상태 요청 (클라이언트 → 서버)
     public class StatusReq : BaseMessage
+    {
+        public bool resulted { get; set; }  // 서버가 필요하면 보냄
+        public StatusReq()
+        {
+            Msg = MsgType.STATUS_REQ;
+        }
+    }
+
+    // 상태 응답 (서버 → 클라이언트)
+    public class StatusRes : BaseMessage
     {
         public bool Charging { get; set; }
         public bool Parking { get; set; }
         public bool Driving { get; set; }
         public double Battery { get; set; }
 
-        public StatusReq()
-        {
-            Msg = MsgType.STATUS_REQ;
-        }
-    }
-    // 상태 응답
-    public class StatusRes : BaseMessage
-    {
-        public bool resulted { get; set; }
         public StatusRes()
         {
             Msg = MsgType.STATUS_RES;
@@ -207,4 +209,6 @@
         public bool Active { get; set; }
         public ControlRes() { Msg = MsgType.CONTROL_RES; }
     }
+
+  
 }
