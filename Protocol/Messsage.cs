@@ -31,199 +31,196 @@
     // 공통 메시지(기반 클래스)
     public class BaseMessage
     {
-        public MsgType Msg { get; set; }
-        public string? Reason { get; set; }
+        public MsgType msg { get; set; }
+        public string? reason { get; set; }
     }
     // 회원가입 요청
     public class EnrollReq : BaseMessage
     {
-        public string? Id { get; set; }
-        public string? Password { get; set; }
-        public string? UserName { get; set; }
-        public string? CarModel { get; set; }
+        public string? id { get; set; }
+        public string? password { get; set; }
+        public string? username { get; set; }
+        public string? carmodel { get; set; }
 
         public EnrollReq()
         {
-            Msg = MsgType.ENROLL_REQ;
+            msg = MsgType.ENROLL_REQ;
         }
     }
     // 회원가입 응답
     public class EnrollRes : BaseMessage
     {
-        public bool Registered { get; set; }
+        public bool registered { get; set; }
 
         public EnrollRes()
         {
-            Msg = MsgType.ENROLL_RES;
+            msg = MsgType.ENROLL_RES;
         }
     }
     public class LoginReq : BaseMessage
     {
-        public string? Id { get; set; }
-        public string? Password { get; set; }
+        public string? id { get; set; }
+        public string? password { get; set; }
 
         public LoginReq()
         {
-            Msg = MsgType.LOGIN_REQ;
+            msg = MsgType.LOGIN_REQ;
         }
     }
     public class LoginRes : BaseMessage
     {
-        public bool Logined { get; set; }
+        public bool logined { get; set; }
 
         public LoginRes()
         {
-            Msg = MsgType.LOGIN_RES;
+            msg = MsgType.LOGIN_RES;
         }
     }
     // 문 제어 요청
     public class DoorReq : BaseMessage
     {
-        public bool Open { get; set; }
+        public bool open { get; set; }
 
         public DoorReq()
         {
-            Msg = MsgType.DOOR_REQ;
+            msg = MsgType.DOOR_REQ;
         }
     }
     // 문 제어 응답
     public class DoorRes : BaseMessage
     {
-        public string? DoorStatus { get; set; }
+        public bool doorstatus { get; set; }
 
         public DoorRes()
         {
-            Msg = MsgType.DOOR_RES;
+            msg = MsgType.DOOR_RES;
         }
     }
 
     // 상태 요청 (클라이언트 → 서버)
     public class StatusReq : BaseMessage
     {
-        public bool resulted { get; set; }  // 서버가 필요하면 보냄
-        public bool Status { get; set; }
+        public bool carstatus { get; set; }
 
         public StatusReq()
         {
-            Msg = MsgType.STATUS_REQ;
+            msg = MsgType.STATUS_REQ;
         }
     }
 
     // 상태 응답 (서버 → 클라이언트)
     public class StatusRes : BaseMessage
     {
-        public bool Charging { get; set; }
-        public bool Parking { get; set; }
-        public bool Driving { get; set; }
-        public double Battery { get; set; }
+        public bool charging { get; set; }
+        public bool parking { get; set; }
+        public bool driving { get; set; }
+        public double battery { get; set; }
 
         public StatusRes()
         {
-            Msg = MsgType.STATUS_RES;
+            msg = MsgType.STATUS_RES;
         }
     }
 
     // 시동 제어
     public class StartReq : BaseMessage
     {
-        public bool Active { get; set; }
-        public StartReq() { Msg = MsgType.START_REQ; }
+        public bool active { get; set; }
+        public StartReq() { msg = MsgType.START_REQ; }
     }
 
     public class StartRes : BaseMessage
     {
-        public bool Active { get; set; }
-        public StartRes() { Msg = MsgType.START_RES; }
+        public bool activestatus { get; set; }
+        public StartRes() { msg = MsgType.START_RES; }
     }
 
     // 트렁크 제어
     public class TrunkReq : BaseMessage
     {
-        public bool Open { get; set; }
-        public TrunkReq() { Msg = MsgType.TRUNK_REQ; }
+        public bool open { get; set; }
+        public TrunkReq() { msg = MsgType.TRUNK_REQ; }
     }
 
     public class TrunkRes : BaseMessage
     {
-        public bool Open { get; set; }
-        public TrunkRes() { Msg = MsgType.TRUNK_RES; }
+        public bool open { get; set; }
+        public TrunkRes() { msg = MsgType.TRUNK_RES; }
     }
 
     // 에어컨 제어
     public class AirReq : BaseMessage
     {
-        public bool On { get; set; }
-        public AirReq() { Msg = MsgType.AIR_REQ; }
+        public bool air { get; set; }
+        public AirReq() { msg = MsgType.AIR_REQ; }
     }
 
     public class AirRes : BaseMessage
     {
-        public bool On { get; set; }
-        public AirRes() { Msg = MsgType.AIR_RES; }
+        public bool airstatus { get; set; }
+        public AirRes() { msg = MsgType.AIR_RES; }
     }
 
     // 온도 제어
     public class CliReq : BaseMessage
     {
         public int Temp { get; set; }
-        public CliReq() { Msg = MsgType.CLI_REQ; }
+        public CliReq() { msg = MsgType.CLI_REQ; }
     }
 
     public class CliRes : BaseMessage
     {
-        public bool Result { get; set; }
-        public CliRes() { Msg = MsgType.CLI_RES; }
+        public bool tempresult { get; set; }
+        public CliRes() { msg = MsgType.CLI_RES; }
     }
 
     // 열선 제어
     public class HeatReq : BaseMessage
     {
-        public bool On { get; set; }
-        public HeatReq() { Msg = MsgType.HEAT_REQ; }
+        public bool heat { get; set; }
+        public HeatReq() { msg = MsgType.HEAT_REQ; }
     }
 
     public class HeatRes : BaseMessage
     {
-        public bool On { get; set; }
-        public HeatRes() { Msg = MsgType.HEAT_RES; }
+        public bool heatstatus { get; set; }
+        public HeatRes() { msg = MsgType.HEAT_RES; }
     }
 
     // 라이트 제어
     public class LightReq : BaseMessage
     {
-        public bool On { get; set; }
-        public LightReq() { Msg = MsgType.LIGHT_REQ; }
+        public bool light { get; set; }
+        public LightReq() { msg = MsgType.LIGHT_REQ; }
     }
 
     public class LightRes : BaseMessage
     {
-        public bool On { get; set; }
-        public LightRes() { Msg = MsgType.LIGHT_RES; }
+        public bool lightstatus { get; set; }
+        public LightRes() { msg = MsgType.LIGHT_RES; }
     }
 
     // 원격주차 제어(UP/DOWN 또는 PARK/DRIVE)
     public class ControlReq : BaseMessage
     {
-        public bool Active { get; set; }
-        public ControlReq() { Msg = MsgType.CONTROL_REQ; }
+        public bool control { get; set; }
+        public ControlReq() { msg = MsgType.CONTROL_REQ; }
     }
 
     public class ControlRes : BaseMessage
     {
-        public bool Active { get; set; }
-        public ControlRes() { Msg = MsgType.CONTROL_RES; }
+        public bool controlstatus { get; set; }
+        public ControlRes() { msg = MsgType.CONTROL_RES; }
     }
 
-  
-    
     public class StopChargingReq : BaseMessage
     {
-        public bool Stop { get; set; }
-        public StopChargingReq() { Msg = MsgType.STOP_CHARGING_REQ; }
+        public bool stop { get; set; }
+        public StopChargingReq() { msg = MsgType.STOP_CHARGING_REQ; }
     }
     public class StopChargingRes : BaseMessage
     {
-        public bool Result { get; set; }
-        public StopChargingRes() { Msg = MsgType.STOP_CHARGING_RES; }
+        public bool stopstatus { get; set; }
+        public StopChargingRes() { msg = MsgType.STOP_CHARGING_RES; }
     }
 }

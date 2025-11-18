@@ -51,7 +51,7 @@ namespace DotBotCarClient.Views
         {
             if (msg is StatusRes status)
             {
-                UpdateChargingStatus(status.Charging, status.Battery);
+                UpdateChargingStatus(status.charging, status.battery);
             }
         }
 
@@ -99,7 +99,7 @@ namespace DotBotCarClient.Views
 
             if (App.Network.IsConnected)
             {
-                var req = new StopChargingReq { Stop = true };
+                var req = new StopChargingReq { stop = true };
                 await App.Network.SendAsync(req);
             }
 

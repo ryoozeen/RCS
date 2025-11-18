@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -9,14 +7,12 @@ using System.Threading.Tasks;
 
 namespace DotBotCarClient.Protocol
 {
-    // 직렬화 + 역직렬화 + 파싱
     public class ControlMessage
     {
-        // ------------------------------
-        // 메시지 직렬화 (송신)
-        // BaseMessage → JSON → byte[]
-        // ------------------------------
-        public static byte[] Serialize(object message)
+        // ============================================================
+        // 🔵 송신: Serialize<T>
+        // ============================================================
+        public static byte[] Serialize<T>(T message)
         {
             var options = new JsonSerializerOptions
             {
@@ -25,126 +21,160 @@ namespace DotBotCarClient.Protocol
             };
 
             string json = JsonSerializer.Serialize(message, message.GetType(), options);
+
+            // 🔥 송신 디버깅
+            Console.WriteLine("========================================");
+            Console.WriteLine("[CLIENT → SERVER] SEND");
+            Console.WriteLine($"[JSON] {json}");
+            Console.WriteLine($"[Type] {message.GetType().Name}");
+
             byte[] body = Encoding.UTF8.GetBytes(json);
+            Console.WriteLine($"[Body Length] {body.Length} bytes");
 
             byte[] lengthBytes = BitConverter.GetBytes(body.Length);
-            byte[] packet = new byte[lengthBytes.Length + body.Length];
+            byte[] packet = new byte[4 + body.Length];
 
             Array.Copy(lengthBytes, 0, packet, 0, 4);
             Array.Copy(body, 0, packet, 4, body.Length);
 
+            Console.WriteLine("[Packet] " + BitConverter.ToString(packet));
+            Console.WriteLine("========================================\n");
+
             return packet;
         }
 
-        // ------------------------------
-        // 메시지 역직렬화 (수신)
-        // byte[] → JSON → BaseMessage
-        // ------------------------------
+
+        // ============================================================
+        // 🔴 수신: DeserializeAsync
+        // ============================================================
         public static async Task<BaseMessage?> DeserializeAsync(NetworkStream stream)
         {
-            const int MAX_MESSAGE_SIZE = 1024 * 100;
-            byte[] lengthBytes = new byte[4];
-
-            // 1) 길이 헤더 읽기
-            int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4);
-            if (bytesRead != 4)
-                return null;
-
-            int messageLength = BitConverter.ToInt32(lengthBytes, 0);
-            if (messageLength <= 0 || messageLength > MAX_MESSAGE_SIZE)
-                return null;
-
-            byte[] messageBytes = new byte[messageLength];
-            int totalBytesRead = 0;
-
-            // 2) 바디 읽기
-            while (totalBytesRead < messageLength)
+            try
             {
-                bytesRead = await stream.ReadAsync(
-                    messageBytes,
-                    totalBytesRead,
-                    messageLength - totalBytesRead);
+                const int MAX_MESSAGE_SIZE = 1024 * 100;
+                byte[] lengthBytes = new byte[4];
 
-                if (bytesRead == 0)
+                // 💬 길이 읽기
+                int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4);
+                if (bytesRead != 4)
+                {
+                    Console.WriteLine("[ERROR] Length header read failed.");
                     return null;
+                }
 
-                totalBytesRead += bytesRead;
+                int messageLength = BitConverter.ToInt32(lengthBytes, 0);
+
+                Console.WriteLine("========================================");
+                Console.WriteLine("[SERVER → CLIENT] RECV");
+                Console.WriteLine($"[Length] {messageLength}");
+
+                if (messageLength <= 0 || messageLength > MAX_MESSAGE_SIZE)
+                {
+                    Console.WriteLine("[ERROR] Invalid messageLength");
+                    return null;
+                }
+
+                byte[] messageBytes = new byte[messageLength];
+                int totalRead = 0;
+
+                // 💬 메시지 본문 읽기
+                while (totalRead < messageLength)
+                {
+                    int rb = await stream.ReadAsync(
+                        messageBytes,
+                        totalRead,
+                        messageLength - totalRead);
+
+                    if (rb == 0)
+                    {
+                        Console.WriteLine("[ERROR] Stream closed while reading body");
+                        return null;
+                    }
+
+                    totalRead += rb;
+                }
+
+                // 💬 JSON 출력
+                string json = Encoding.UTF8.GetString(messageBytes);
+                Console.WriteLine($"[JSON] {json}");
+
+                BaseMessage? parsed = Parse(json);
+
+                if (parsed == null)
+                {
+                    Console.WriteLine("[ERROR] Parse returned null");
+                }
+                else
+                {
+                    Console.WriteLine($"[Parsed Type] {parsed.GetType().Name}");
+                }
+
+                Console.WriteLine("========================================\n");
+
+                return parsed;
             }
-
-            // 3) JSON 문자열 생성
-            string json = Encoding.UTF8.GetString(messageBytes);
-            Console.WriteLine($"[RAW JSON] {json}");
-
-            // 4) Parse로 타입 분기 후 반환
-            return Parse(json);
+            catch (Exception ex)
+            {
+                Console.WriteLine("[EXCEPTION] DeserializeAsync : " + ex.Message);
+                return null;
+            }
         }
 
 
-        // ------------------------------
-        // Parse: MsgType 보고 클래스로 분기
-        // ------------------------------
+        // ============================================================
+        // 🔍 Parse 메서드 (타입 선택)
+        // ============================================================
         public static BaseMessage? Parse(string json)
         {
-            var options = new JsonSerializerOptions
+            try
             {
-                Converters = { new JsonStringEnumConverter() },
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+                var options = new JsonSerializerOptions
+                {
+                    Converters = { new JsonStringEnumConverter() },
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
 
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
 
-            // msg 또는 Msg 둘 다 체크하도록 수정
-            if (!root.TryGetProperty("msg", out var msgProp) &&
-                !root.TryGetProperty("Msg", out msgProp))
-                return null;
+                if (!root.TryGetProperty("msg", out var msgProp) &&
+                    !root.TryGetProperty("Msg", out msgProp))
+                {
+                    Console.WriteLine("[Parse ERROR] msg field not found!");
+                    return null;
+                }
 
-            // Enum.TryParse 사용
-            if (!Enum.TryParse(msgProp.GetString(), out MsgType type))
-                return null;
+                string? msgValue = msgProp.GetString();
+                Console.WriteLine($"[Parse] msg = {msgValue}");
 
-            return type switch
+                if (!Enum.TryParse(msgValue, out MsgType type))
+                {
+                    Console.WriteLine($"[Parse ERROR] Unknown msg type: {msgValue}");
+                    return null;
+                }
+
+                BaseMessage? result = type switch
+                {
+                    MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, options),
+                    MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, options),
+
+                    MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json, options),
+                    MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json, options),
+
+                    MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
+                    MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
+
+                    // 필요하면 추가
+                    _ => JsonSerializer.Deserialize<BaseMessage>(json, options),
+                };
+
+                return result;
+            }
+            catch (Exception ex)
             {
-                MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, options),
-                MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, options),
-
-                MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json, options),
-                MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json, options),
-
-                MsgType.DOOR_REQ => JsonSerializer.Deserialize<DoorReq>(json, options),
-                MsgType.DOOR_RES => JsonSerializer.Deserialize<DoorRes>(json, options),
-
-                MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
-                MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
-
-
-                // 추가
-                MsgType.START_REQ => JsonSerializer.Deserialize<StartReq>(json, options),
-                MsgType.START_RES => JsonSerializer.Deserialize<StartRes>(json, options),
-
-                MsgType.TRUNK_REQ => JsonSerializer.Deserialize<TrunkReq>(json, options),
-                MsgType.TRUNK_RES => JsonSerializer.Deserialize<TrunkRes>(json, options),
-
-                MsgType.AIR_REQ => JsonSerializer.Deserialize<AirReq>(json, options),
-                MsgType.AIR_RES => JsonSerializer.Deserialize<AirRes>(json, options),
-
-                MsgType.CLI_REQ => JsonSerializer.Deserialize<CliReq>(json, options),
-                MsgType.CLI_RES => JsonSerializer.Deserialize<CliRes>(json, options),
-
-                MsgType.HEAT_REQ => JsonSerializer.Deserialize<HeatReq>(json, options),
-                MsgType.HEAT_RES => JsonSerializer.Deserialize<HeatRes>(json, options),
-
-                MsgType.LIGHT_REQ => JsonSerializer.Deserialize<LightReq>(json, options),
-                MsgType.LIGHT_RES => JsonSerializer.Deserialize<LightRes>(json, options),
-
-                MsgType.CONTROL_REQ => JsonSerializer.Deserialize<ControlReq>(json, options),
-                MsgType.CONTROL_RES => JsonSerializer.Deserialize<ControlRes>(json, options),
-
-                MsgType.STOP_CHARGING_REQ => JsonSerializer.Deserialize<StopChargingReq>(json, options),
-                MsgType.STOP_CHARGING_RES => JsonSerializer.Deserialize<StopChargingRes>(json, options),
-
-                _ => JsonSerializer.Deserialize<BaseMessage>(json, options)
-            };
+                Console.WriteLine("[Parse Exception] " + ex.Message);
+                return null;
+            }
         }
     }
 }

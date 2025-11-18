@@ -15,8 +15,8 @@ namespace DotBotCarClient
 
             try
             {
-                await Network.ConnectAsync("10.10.21.122", 7000);
-                //await Network.ConnectAsync("10.10.21.111", 7000);
+                //await Network.ConnectAsync("10.10.21.122", 7000);
+                await Network.ConnectAsync("10.10.21.107", 7000);
 
                 // 여기서 한번만 등록
                 Network.OnMessageReceived += Network_OnMessageReceived;
@@ -44,7 +44,7 @@ namespace DotBotCarClient
                     MessageBox.Show(
                         $"[DEBUG] 현재 View는 IProtocolHandler 아님\n" +
                         $"타입 = {mainWindow?.ContentFrame?.Content?.GetType().Name}\n" +
-                        $"Msg = {msg.Msg}");
+                        $"Msg = {msg.msg}");
                 }
             });
         }

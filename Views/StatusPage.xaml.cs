@@ -42,7 +42,7 @@ namespace DotBotCarClient.Views
         // ======================================================
         public void HandleProtocolMessage(BaseMessage msg)
         {
-            if (msg.Msg != MsgType.STATUS_RES)
+            if (msg.msg != MsgType.STATUS_RES)
                 return;
 
             var st = msg as StatusRes;
@@ -50,12 +50,12 @@ namespace DotBotCarClient.Views
 
             Dispatcher.Invoke(() =>
             {
-                BatteryText.Text = $"{st.Battery}%";
+                BatteryText.Text = $"{st.battery}%";
 
                 string state = "대기 중";
-                if (st.Charging) state = "충전 중";
-                else if (st.Driving) state = "주행 중";
-                else if (st.Parking) state = "주차 중";
+                if (st.charging) state = "충전 중";
+                else if (st.driving) state = "주행 중";
+                else if (st.parking) state = "주차 중";
 
                 CarStateText.Text = $"차량 상태 : {state}";
             });
@@ -68,7 +68,7 @@ namespace DotBotCarClient.Views
         {
             var req = new StatusReq
             {
-                resulted = true
+                carstatus = true
             };
 
             await App.Network.SendAsync(req);
@@ -79,19 +79,19 @@ namespace DotBotCarClient.Views
         // ==========================================================
         private async void start_Click(object sender, RoutedEventArgs e)
         {
-            var req = new StartReq { Active = true };
+            var req = new StartReq { active = true };
             await App.Network.SendAsync(req);
         }
 
         private async void Lock_Click(object sender, RoutedEventArgs e)
         {
-            var req = new DoorReq { Open = true };
+            var req = new DoorReq { open = true };
             await App.Network.SendAsync(req);
         }
 
         private async void Trunk_Click(object sender, RoutedEventArgs e)
         {
-            var req = new TrunkReq { Open = true };
+            var req = new TrunkReq { open = true };
             await App.Network.SendAsync(req);
         }
 

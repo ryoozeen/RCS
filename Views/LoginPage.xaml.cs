@@ -20,13 +20,13 @@ namespace DotBotCarClient.Views
         {
             if (msg is LoginRes res)
             {
-                if (res.Logined)
+                if (res.logined)
                 {
                     NavigationService?.Navigate(new StatusPage());
                 }
                 else
                 {
-                    MessageBox.Show($"로그인 실패: {res.Reason}", "ERROR");
+                    MessageBox.Show($"로그인 실패: {res.reason}", "ERROR");
                 }
             }
         }
@@ -41,8 +41,8 @@ namespace DotBotCarClient.Views
 
             var msg = new LoginReq
             {
-                Id = txtLoginId.Text,
-                Password = SecurityHelper.ComputeSHA256(pwLogin.Password)
+                id = txtLoginId.Text,
+                password = SecurityHelper.ComputeSHA256(pwLogin.Password)
             };
 
             await App.Network.SendAsync(msg);

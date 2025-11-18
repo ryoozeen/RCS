@@ -30,7 +30,7 @@ namespace DotBotCarClient.Views
         {
             if (msg is EnrollRes res)
             {
-                if (res.Registered)
+                if (res.registered)
                 {
                     // 🔹 회원가입 성공 시 → 로그인 페이지로 이동
                     NavigationService?.Navigate(new LoginPage());
@@ -75,10 +75,10 @@ namespace DotBotCarClient.Views
             // 회원가입 요청 전송
             var msg = new EnrollReq
             {
-                Id = id,
-                UserName = name,
-                Password = SecurityHelper.ComputeSHA256(pw),
-                CarModel = (cmbCarModel.SelectedItem as ComboBoxItem)?.Content.ToString()
+                id = id,
+                username = name,
+                password = SecurityHelper.ComputeSHA256(pw),
+                carmodel = (cmbCarModel.SelectedItem as ComboBoxItem)?.Content.ToString()
             };
 
             await App.Network.SendAsync(msg);
