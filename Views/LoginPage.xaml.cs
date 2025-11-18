@@ -19,7 +19,7 @@ namespace DotBotCarClient.Views
         {
             if (msg is LoginRes res)
             {
-                if (res.Success)
+                if (res.Logined)
                 {
                     MessageBox.Show("로그인 성공");
                     NavigationService?.Navigate(new StatusPage());

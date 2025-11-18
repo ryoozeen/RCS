@@ -29,11 +29,11 @@ namespace DotBotCarClient.Views
         {
             if (msg is EnrollRes res)
             {
-                MessageBox.Show(res.Success
+                MessageBox.Show(res.Registered
                     ? "회원가입 성공"
                     : $"회원가입 실패: {res.Reason}");
 
-                if (res.Success)
+                if (res.Registered)
                 {
                     // 🔹 회원가입 성공 시 → 로그인 페이지로 이동
                     NavigationService?.Navigate(new LoginPage());
