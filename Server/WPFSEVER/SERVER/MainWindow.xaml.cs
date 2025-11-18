@@ -11,7 +11,7 @@ using System.Windows.Shapes;
 
 using SERVER.Protocol;
 using SERVER.Network;
-using System.ComponentModel;  // CancelEventArgs 사용을 위해
+using System.ComponentModel; 
 
 namespace SERVER
 {
@@ -21,40 +21,28 @@ namespace SERVER
     public partial class MainWindow : Window
     {
         private TcpServer? _tcpServer;
-        private const int Port = 8888; //포트 번호
+        private const int Port = 7000; //포트 번호
 
         public MainWindow()
         {
             InitializeComponent();
-
-            // TcpServer 인스턴스 생성
             _tcpServer = new TcpServer(Port);
-
-            // ⭐ 추가: 메시지 수신 이벤트 구독
             _tcpServer.OnMessageReceived += TcpServer_OnMessageReceived;
-
         }
 
         // 서버 연결 버튼
         private async void ServerConnect_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
-
             try
             {
-                // 서버 시작
                 await _tcpServer.StartAsync();
-
-                // UI 업데이트 (서버 시작 성공 시)
                 UpdateServerStatus(true);
-
-                // 로그 출력 (선택사항)
                 AppendLog("서버가 시작되었습니다.");
             }
             catch (Exception ex)
             {
                 AppendLog($"서버 시작 실패: {ex.Message}");
-                // 에러 시 UI는 변경하지 않음
             }
         }
 
@@ -63,43 +51,39 @@ namespace SERVER
         {
             if (isRunning)
             {
-                // 서버 실행 중: 초록색 + "Server Start"
                 ServerStatusBar.Background = new SolidColorBrush(Colors.Green);
                 ServerStatusBar.BorderBrush = new SolidColorBrush(Colors.Green);
                 ServerStatusText.Text = "Server Start";
             }
-            
             else
             {
-                // 서버 중지: 빨간색 + "Server Stop"
                 ServerStatusBar.Background = new SolidColorBrush(Colors.Red);
                 ServerStatusBar.BorderBrush = new SolidColorBrush(Colors.Red);
                 ServerStatusText.Text = "Server Stop";
             }
         }
 
-        // 로그 출력 메서드 추가
+        // [수정] 로그 출력 메서드 (스레드 안전하게 변경)
         private void AppendLog(string message)
         {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => AppendLog(message));
+                return;
+            }
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             LogTextBox.AppendText($"[{timestamp}] {message}\r\n");
-            LogTextBox.ScrollToEnd(); // 자동 스크롤
+            LogTextBox.ScrollToEnd();
         }
 
         // 서버 종료 버튼
         private void ServerShutdown_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
-
             try
             {
-                // 서버 중지
                 _tcpServer.Stop();
-
-                // UI 업데이트 (서버 중지 시)
                 UpdateServerStatus(false);
-
-                // 로그 출력
                 AppendLog("서버가 중지되었습니다.");
             }
             catch (Exception ex)
@@ -108,86 +92,154 @@ namespace SERVER
             }
         }
 
-        // 메시지 수신 이벤트 핸들러
         private void TcpServer_OnMessageReceived(string clientId, ControlMessage message)
         {
-            // UI 스레드에서 실행 (Dispatcher.Invoke 필요)
-            Dispatcher.Invoke(() =>
-            {
-                // 로그 형식: [{timestamp}] {클라이언트 이름} {메시지 내용}
-                string logMessage = FormatLogMessage(clientId, message);
-                AppendLog(logMessage);
-            });
+            string logMessage = FormatLogMessage(clientId, message, " [RECV]");
+            AppendLog(logMessage);
+
+            RouteMessage(clientId, message);
         }
 
-        // 메시지를 로그 형식으로 변환
-        private string FormatLogMessage(string clientId, ControlMessage message)
+        private string FormatLogMessage(string clientId, ControlMessage message, string direction = "")
         {
-            // 클라이언트 ID에서 IP만 추출
-            string clientName = clientId.Split(':')[0];  // "192.168.1.100:12345" → "192.168.1.100"
-
-            // 메시지 타입에 따라 다른 로그 형식
+            string clientName = clientId.Split(':')[0];
             string content = "";
 
-            if (message.Msg == "CONNECTION_SUCCESS")
+            switch (message.msg)
             {
-                content = "서버 연결 성공";
-            }
-            else if (message.Msg == "CONNECTION_FAILED")
-            {
-                content = $"서버 연결 실패: {message.Reason ?? ""}";
-            }
-            else if (message.Msg == "STATUS_UPDATE")
-            {
-                // 상태 업데이트 메시지
-                content = $"상태 업데이트 - " +
-                          $"문: {message.DoorStatus ?? "N/A"}, " +
-                          $"시동: {message.StartStatus ?? "N/A"}, " +
-                          $"에어컨: {message.AirStatus ?? "N/A"}, " +
-                          $"난방: {message.HeatStatus ?? "N/A"}, " +
-                          $"충전: {message.ChargingStatus ?? "N/A"}, " +
-                          $"배터리: {message.BatteryLevel}%";
-            }
-            else if (!string.IsNullOrEmpty(message.Msg))
-            {
-                // 기타 메시지
-                content = message.Msg;
-                if (!string.IsNullOrEmpty(message.Reason))
-                {
-                    content += $" - {message.Reason}";
-                }
-            }
-            else
-            {
-                // 메시지 타입이 없으면 기본 형식
-                content = "알 수 없는 메시지";
+                case "CLIENT_IDENTIFY":
+                    content = $"클라이언트 식별: {message.command}";  
+                    break;
+                case "ENROLL_REQ":
+                    content = $"회원가입 요청: {message.id}"; 
+                    break;
+                case "ENROLL_RES":
+                    content = $"회원가입 응답: {message.registered}";
+                    break;
+                case "LOGIN_REQ":
+                    content = $"로그인 요청: {message.id}"; 
+                    break;
+                case "LOGIN_RES":
+                    content = $"로그인 응답: {message.logined}"; 
+                    break;
+                case "DOOR_REQ":
+                    content = $"문 제어 요청: {message.open}"; 
+                    break;
+                case "DOOR_RES":
+                    content = $"문 제어 응답: {message.doorStatus}"; 
+                    break;
+                case "STATUS_REQ":
+                    content = $"상태 요청: Charging={message.charging}";
+                    break;
+                case "STATUS_RES":
+                    content = $"상태 응답: {message.resulted}";
+                    break;
+                default:
+                    content = $"[알 수 없는 메시지] Msg: {message.msg}";
+                    break;
             }
 
-            return $"{clientName} {content}";
+            return $"{clientName}{direction} {content}";
         }
 
-        // 이벤트 구독 해제
+ 
+        private void RouteMessage(string clientId, ControlMessage message)
+        {
+            ControlMessage? response = null;
+            ControlMessage? forward = null;
+            string? targetClientId = null;
+
+            try
+            {
+      
+                switch (message.msg)
+                {
+                    //  클라이언트 식별
+                    case "CLIENT_IDENTIFY":
+                        string clientType = message.command ?? "Unknown"; 
+                        _tcpServer?.IdentifyClient(clientId, clientType);
+                        AppendLog($"[{clientId}] 식별 완료: {clientType}");
+                        break;
+
+                    //  응답 
+                    case "ENROLL_REQ":
+                        response = new ControlMessage { msg = "ENROLL_RES", registered = true }; 
+                        targetClientId = clientId;
+                        break;
+
+                    case "LOGIN_REQ":
+                        response = new ControlMessage { msg = "LOGIN_RES", logined = true };
+                        targetClientId = clientId;
+                        break;
+
+
+                    case "START_REQ":
+                    case "DOOR_REQ":
+                    case "TRUNK_REQ":
+                    case "AIR_REQ":
+                    case "CLI_REQ":
+                    case "HEAT_REQ":
+                    case "LIGHT_REQ":
+                    case "CONTROL_REQ":
+                    case "STATUS_REQ":
+                        forward = message;
+                        targetClientId = _tcpServer?.GetClientByType("DOBOTLAB");
+                        break;
+
+                    case "START_RES":
+                    case "DOOR_RES":
+                    case "TRUNK_RES":
+                    case "AIR_RES":
+                    case "CLI_RES":
+                    case "HEAT_RES":
+                    case "LIGHT_RES":
+                    case "CONTROL_RES":
+                    case "STATUS_RES":
+                        forward = message;
+                        targetClientId = _tcpServer?.GetClientByType("RCS");
+                        break;
+                }
+
+                if (response != null && targetClientId != null)
+                {
+                    _tcpServer?.SendToClientAsync(targetClientId, response);
+                    LogSend(targetClientId, response);
+                }
+
+                if (forward != null && targetClientId != null)
+                {
+                    _tcpServer?.SendToClientAsync(targetClientId, forward);
+                    LogSend(targetClientId, forward);
+                }
+                else if (forward != null && targetClientId == null)
+                {
+                    AppendLog($"[라우팅 실패] 메시지 {message.msg}를 전달할 대상({(message.msg.EndsWith("_REQ") ? "DOBOTLAB" : "RCS")})을 찾을 수 없습니다."); // [수정] msg
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"[메시지 처리 오류] {ex.Message}");
+            }
+        }
+
+        private void LogSend(string clientId, ControlMessage message)
+        {
+            string logMessage = FormatLogMessage(clientId, message, " [SEND]");
+            AppendLog(logMessage);
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             if (_tcpServer != null)
             {
-                // 메세지 구독 해제 (메모리 누수 방지)
                 _tcpServer.OnMessageReceived -= TcpServer_OnMessageReceived;
-
                 try
                 {
-                    // 서버 중지
                     _tcpServer.Stop();
                 }
-                catch (Exception)
-                {
-                    // 에러 처리
-                }
+                catch (Exception) { }
             }
-
-            // 기본 종료 처리 호출
             base.OnClosing(e);
         }
     }
-    
 }
