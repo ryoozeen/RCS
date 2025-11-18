@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using MyApp.Helpers;
 
 namespace DotBotCarClient.Views
 {
@@ -21,12 +22,11 @@ namespace DotBotCarClient.Views
             {
                 if (res.Logined)
                 {
-                    MessageBox.Show("로그인 성공");
                     NavigationService?.Navigate(new StatusPage());
                 }
                 else
                 {
-                    MessageBox.Show($"로그인 실패: {res.Reason}");
+                    MessageBox.Show($"로그인 실패: {res.Reason}", "ERROR");
                 }
             }
         }
@@ -42,7 +42,7 @@ namespace DotBotCarClient.Views
             var msg = new LoginReq
             {
                 Id = txtLoginId.Text,
-                Password = pwLogin.Password
+                Password = SecurityHelper.ComputeSHA256(pwLogin.Password)
             };
 
             await App.Network.SendAsync(msg);

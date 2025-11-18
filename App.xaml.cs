@@ -16,6 +16,7 @@ namespace DotBotCarClient
             try
             {
                 await Network.ConnectAsync("10.10.21.122", 7000);
+                //await Network.ConnectAsync("10.10.21.111", 7000);
 
                 // 여기서 한번만 등록
                 Network.OnMessageReceived += Network_OnMessageReceived;
