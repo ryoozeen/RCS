@@ -18,18 +18,18 @@ LMS7기, C# WPF를 활용한 차량 원격 제어 시스템
 ### - 바디: JSON 문자열 (UTF-8)
 ### - 바디 최대 크기: 100KB
 ### - 메시지 타입 :
-##### ENROLL_REQ / ENROLL_RES
-##### LOGIN_REQ / LOGIN_RES
-##### START_REQ / START_RES
-##### DOOR_REQ / DOOR_RES
-##### TRUNK_REQ / TRUNK_RES
-##### AIR_REQ / AIR_RES
-##### CLI_REQ / CLI_RES
-##### HEAT_REQ / HEAT_RES
-##### LIGHT_REQ / LIGHT_RES
-##### CONTROL_REQ / CONTROL_RES
-##### STATUS_REQ / STATUS_RES
-##### STOP_CHARGING_REQ / STOP_CHARGING_RES
+#### ENROLL_REQ / ENROLL_RES (회원가입)
+#### LOGIN_REQ / LOGIN_RES (로그인)
+#### START_REQ / START_RES (시동)
+#### DOOR_REQ / DOOR_RES (문)
+#### TRUNK_REQ / TRUNK_RES (트렁크)
+#### AIR_REQ / AIR_RES (에어컨)
+#### CLI_REQ / CLI_RES (온도)
+#### HEAT_REQ / HEAT_RES (열선)
+#### LIGHT_REQ / LIGHT_RES (헤드 라이트)
+#### CONTROL_REQ / CONTROL_RES (주차/출차)
+#### STOP_CHARGING_REQ / STOP_CHARGING_RES (배터리 충전 종료)
+#### STATUS_REQ / STATUS_RES (상태)
 ### - 메시지 필드 :
 #### 1. 회원가입(ENROLL)
 ##### REQ : id(string), password(string), username(string), car_model(string)
