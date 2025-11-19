@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -9,27 +8,33 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Threading.Tasks;
-using System.ComponentModel;
 
 using SERVER.Protocol;
 using SERVER.Network;
+using System.ComponentModel;
+using System.Threading.Tasks; // async/await 사용을 위해 추가
 
 namespace SERVER
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
     public partial class MainWindow : Window
     {
         private TcpServer? _tcpServer;
-        private const int Port = 7000;
-
-        private readonly DatabaseManager _dbManager; // [필수] DB 변수 선언
+        private const int Port = 7000; //포트 번호
+        private readonly DatabaseManager _dbManager;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            // [DB 연결 문자열] Password는 본인 환경에 맞게 설정하세요.
-            string connectionString = "Server=localhost;Port=3306;Database=rcs;User=root;Password=;";
+            // Server=localhost 
+            // Database=rcs 
+            // User=root 
+            // Password=; 
+            string connectionString = "Server=localhost;Port=3306;Database=rcwUser=root;Password=1234;";
+
             _dbManager = new DatabaseManager(connectionString);
 
             _tcpServer = new TcpServer(Port);
@@ -38,6 +43,7 @@ namespace SERVER
             _tcpServer.OnClientDisconnected += TcpServer_OnClientDisconnected;
         }
 
+        // 서버 연결 버튼
         private async void ServerConnect_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
@@ -53,6 +59,7 @@ namespace SERVER
             }
         }
 
+        // 상태바 업데이트
         private void UpdateServerStatus(bool isRunning)
         {
             if (isRunning)
@@ -69,6 +76,7 @@ namespace SERVER
             }
         }
 
+        // [수정] 로그 출력 메서드 (스레드 안전하게 변경)
         private void AppendLog(string message)
         {
             if (!Dispatcher.CheckAccess())
@@ -81,6 +89,7 @@ namespace SERVER
             LogTextBox.ScrollToEnd();
         }
 
+        // 서버 종료 버튼
         private void ServerShutdown_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
@@ -96,10 +105,12 @@ namespace SERVER
             }
         }
 
+        // ** 병합 완료 ** (최신 코드: async, BaseMessage)
         private async void TcpServer_OnMessageReceived(string clientId, BaseMessage message)
         {
             string logMessage = FormatLogMessage(clientId, message, " [RECV]");
             AppendLog(logMessage);
+
             await RouteMessage(clientId, message);
         }
 
@@ -110,6 +121,7 @@ namespace SERVER
 
             switch (message.msg)
             {
+                // ** 병합 완료 ** (최신 코드: MsgType 기반 로깅)
                 case MsgType.ENROLL_REQ:
                     if (message is EnrollReq req1) content = $"회원가입 요청: {req1.id}";
                     break;
@@ -136,9 +148,11 @@ namespace SERVER
                     break;
                 default: content = $"[알 수 없는 메시지] Msg: {message.msg}"; break;
             }
+
             return $"{clientName}{direction} {content}";
         }
 
+        // ** 병합 완료 ** (최신 코드: async Task, DB 연동 로직 유지)
         private async Task RouteMessage(string clientId, BaseMessage message)
         {
             BaseMessage? response = null;
@@ -210,17 +224,18 @@ namespace SERVER
 
                 if (response != null && targetClientId != null)
                 {
-                    await _tcpServer.SendToClientAsync(targetClientId, response);
+                    _tcpServer?.SendToClientAsync(targetClientId, response);
                     LogSend(targetClientId, response);
                 }
 
                 if (forward != null && targetClientId != null)
                 {
-                    await _tcpServer.SendToClientAsync(targetClientId, forward);
+                    _tcpServer?.SendToClientAsync(targetClientId, forward);
                     LogSend(targetClientId, forward);
                 }
                 else if (forward != null && targetClientId == null)
                 {
+                    // ** 병합 완료 ** (최신 코드: 라우팅 실패 로깅)
                     string targetType = message.msg.ToString().EndsWith("_REQ") ? "DOBOTLAB" : "RCS";
                     AppendLog($"[라우팅 실패] 메시지 {message.msg}를 전달할 대상({targetType})을 찾을 수 없습니다.");
                 }
@@ -264,7 +279,7 @@ namespace SERVER
                 _tcpServer.OnMessageReceived -= TcpServer_OnMessageReceived;
                 _tcpServer.OnClientConnected -= TcpServer_OnClientConnected;
                 _tcpServer.OnClientDisconnected -= TcpServer_OnClientDisconnected;
-                try { _tcpServer.Stop(); } catch { }
+                try { _tcpServer.Stop(); } catch { } // ** 병합 완료 ** (간결한 Stop 로직 유지)
             }
             base.OnClosing(e);
         }

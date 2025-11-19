@@ -14,17 +14,19 @@ namespace SERVER.Network
             _connectionString = connectionString;
         }
 
-        // [핵심 수정] 회원가입: Task<int>를 반환합니다. (디버그 정보)
+        // ** 병합 완료 ** (최신 코드: EnrollReq를 받아서 rowsAffected(int)를 반환)
         public async Task<int> EnrollUserAsync(EnrollReq message)
         {
-            if (message.id == null || message.password == null) return 0; // 실패 시 0 반환
+            if (message.id == null || message.password == null)
+            {
+                return 0;
+            }
 
             try
             {
                 await using var conn = new MySqlConnection(_connectionString);
                 await conn.OpenAsync();
 
-                // 테이블/컬럼 이름은 'users', 'id', 'password' 등으로 가정합니다.
                 string sql = "INSERT INTO users (id, password, userName, carModel) VALUES (@id, @password, @userName, @carModel)";
 
                 await using var cmd = new MySqlCommand(sql, conn);
@@ -34,22 +36,26 @@ namespace SERVER.Network
                 cmd.Parameters.AddWithValue("@userName", message.username ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@carModel", message.carmodel ?? (object)DBNull.Value);
 
-                // 결과를 int로 받아서 반환합니다. (0이면 실패, 1이면 성공)
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                Console.WriteLine($"[DB DEBUG] ENROLL: {rowsAffected} rows affected. User: {message.id}");
+
                 return rowsAffected;
             }
             catch (Exception ex)
             {
-                // [로그 확인 필요] 디버거가 여기서 멈출 수 있습니다.
                 Console.WriteLine($"DB Error: {ex.Message}");
-                return 0; // 오류 시 0 반환
+                return 0;
             }
         }
 
-        // [수정] 로그인: Task<int>를 반환합니다.
+        // ** 병합 완료 ** (최신 코드: LoginReq를 받아서 로그인된 유저 수(int)를 반환)
         public async Task<int> LoginUserAsync(LoginReq message)
         {
-            if (message.id == null || message.password == null) return 0;
+            if (message.id == null || message.password == null)
+            {
+                return 0;
+            }
 
             try
             {
@@ -64,12 +70,12 @@ namespace SERVER.Network
                 cmd.Parameters.AddWithValue("@password", message.password);
 
                 var result = await cmd.ExecuteScalarAsync();
-                return Convert.ToInt32(result); // 0 또는 1 반환
+                return Convert.ToInt32(result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"DB Error: {ex.Message}");
-                return 0; // 오류 시 0 반환
+                return 0;
             }
         }
     }
