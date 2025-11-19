@@ -24,7 +24,13 @@ namespace SERVER.Network
         private readonly ConcurrentDictionary<string, ClientHandler> _clientHandlers = new ConcurrentDictionary<string, ClientHandler>();
 
         // 이벤트: 클라이언트로부터 메시지 수신 시 발생
-        public event Action<string, ControlMessage>? OnMessageReceived;
+        public event Action<string, BaseMessage>? OnMessageReceived;
+        
+        // 이벤트: 클라이언트 연결 시 발생
+        public event Action<string>? OnClientConnected;
+        
+        // 이벤트: 클라이언트 연결 해제 시 발생 (clientId, clientType)
+        public event Action<string, string>? OnClientDisconnected;
 
         // 생성자
         public TcpServer(int port)
@@ -33,7 +39,7 @@ namespace SERVER.Network
         }
 
         // [신규] 특정 클라이언트에게 메시지 전송 (MainWindow에서 사용)
-        public async Task SendToClientAsync(string clientId, ControlMessage message)
+        public async Task SendToClientAsync(string clientId, BaseMessage message)
         {
             if (_clientHandlers.TryGetValue(clientId, out ClientHandler? handler))
             {
@@ -120,11 +126,23 @@ namespace SERVER.Network
 
                     handler.OnClientDisconnected += (id) =>
                     {
-
+                        // 클라이언트 타입 가져오기
+                        string clientType = "Unknown";
+                        if (_clientHandlers.TryGetValue(id, out ClientHandler? disconnectedHandler))
+                        {
+                            clientType = disconnectedHandler.ClientType;
+                        }
+                        
                         _clientHandlers.TryRemove(id, out _);
+                        
+                        // 연결 해제 이벤트 발생
+                        OnClientDisconnected?.Invoke(id, clientType);
                     };
 
                     _clientHandlers.TryAdd(clientId, handler);
+                    
+                    // 클라이언트 연결 이벤트 발생
+                    OnClientConnected?.Invoke(clientId);
 
                     // 클라이언트별 메시지 수신 루프 시작 (별도 Task로)
                     _ = Task.Run(async () => await handler.HandleClientAsync(), cancellationToken);

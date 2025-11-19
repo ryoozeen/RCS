@@ -20,7 +20,7 @@ namespace SERVER.Network
 
         public string ClientType { get; set; } = "Unknown";
 
-        public event Action<string, ControlMessage>? OnMessageReceived;
+        public event Action<string, BaseMessage>? OnMessageReceived;
 
         public event Action<string>? OnClientDisconnected;
 
@@ -32,7 +32,7 @@ namespace SERVER.Network
             _clientId = _client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
         }
 
-        public async Task SendMessageAsync(ControlMessage message)
+        public async Task SendMessageAsync(BaseMessage message)
         {
             if (_stream == null || !_client.Connected)
             {
@@ -41,7 +41,7 @@ namespace SERVER.Network
 
             try
             {
-                byte[] messageBytes = ControlMessage.SerializeMessage(message);
+                byte[] messageBytes = BaseMessage.SerializeMessage(message);
 
                 await _stream.WriteAsync(messageBytes, 0, messageBytes.Length, _cancellationToken);
             }
@@ -62,7 +62,7 @@ namespace SERVER.Network
                 {
                     try
                     {
-                        ControlMessage? message = await ControlMessage.DeserializeMessageAsync(_stream, _cancellationToken);
+                        BaseMessage? message = await BaseMessage.DeserializeMessageAsync(_stream, _cancellationToken);
 
                         if (message == null)
                         {

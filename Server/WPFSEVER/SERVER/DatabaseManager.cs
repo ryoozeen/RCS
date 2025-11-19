@@ -15,7 +15,7 @@ namespace SERVER.Network
         }
 
         // [핵심 수정] 회원가입: Task<int>를 반환합니다. (디버그 정보)
-        public async Task<int> EnrollUserAsync(ControlMessage message)
+        public async Task<int> EnrollUserAsync(EnrollReq message)
         {
             if (message.id == null || message.password == null) return 0; // 실패 시 0 반환
 
@@ -31,8 +31,8 @@ namespace SERVER.Network
 
                 cmd.Parameters.AddWithValue("@id", message.id);
                 cmd.Parameters.AddWithValue("@password", message.password);
-                cmd.Parameters.AddWithValue("@userName", message.userName ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@carModel", message.carModel ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@userName", message.username ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@carModel", message.carmodel ?? (object)DBNull.Value);
 
                 // 결과를 int로 받아서 반환합니다. (0이면 실패, 1이면 성공)
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -47,7 +47,7 @@ namespace SERVER.Network
         }
 
         // [수정] 로그인: Task<int>를 반환합니다.
-        public async Task<int> LoginUserAsync(ControlMessage message)
+        public async Task<int> LoginUserAsync(LoginReq message)
         {
             if (message.id == null || message.password == null) return 0;
 
