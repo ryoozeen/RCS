@@ -18,7 +18,7 @@ LMS7기, C# WPF를 활용한 차량 원격 제어 시스템
 - 바디: JSON 문자열 (UTF-8)
 - 바디 최대 크기: 100KB
 - 메시지 타입 :
-ENROLL_REQ,
+ENROLL_REQ, \n
 ENROLL_RES,
 LOGIN_REQ,
 LOGIN_RES,
