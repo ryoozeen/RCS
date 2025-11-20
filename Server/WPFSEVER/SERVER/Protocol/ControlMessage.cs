@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 
 namespace SERVER.Protocol
 {
+    // ============================
     // 메시지 타입
+    // ============================
     public enum MsgType
     {
         ENROLL_REQ,
@@ -37,205 +39,184 @@ namespace SERVER.Protocol
         STOP_CHARGING_RES
     }
 
-    // 공통 메시지(기반 클래스)
+    // ============================
+    // 공통 메시지 (기반 클래스)
+    // ============================
     public class BaseMessage
     {
         public MsgType msg { get; set; }
         public string? reason { get; set; }
 
-        // 직렬화/역직렬화를 위한 정적 메서드
+        // 클라와 동일한 JSON 옵션
+        public static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new JsonStringEnumConverter() },
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        // ============================
+        // 🔴 역직렬화 (수신)
+        // ============================
         public static async Task<BaseMessage?> DeserializeMessageAsync(
             NetworkStream stream,
             CancellationToken cancellationToken)
         {
-            const int MAX_MESSAGE_SIZE = 1024 * 100;
             byte[] lengthBytes = new byte[4];
 
-            int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4, cancellationToken);
-            if (bytesRead != 4) return null;
+            int lenRead = await stream.ReadAsync(lengthBytes, 0, 4, cancellationToken);
+            if (lenRead != 4) return null;
 
-            int messageLength = BitConverter.ToInt32(lengthBytes, 0);
-            if (messageLength <= 0 || messageLength > MAX_MESSAGE_SIZE) return null;
+            int bodyLength = BitConverter.ToInt32(lengthBytes, 0);
+            if (bodyLength <= 0 || bodyLength > 1024 * 100) return null;
 
-            byte[] messageBytes = new byte[messageLength];
-            int totalBytesRead = 0;
+            byte[] body = new byte[bodyLength];
+            int received = 0;
 
-            while (totalBytesRead < messageLength)
+            while (received < bodyLength)
             {
-                bytesRead = await stream.ReadAsync(
-                    messageBytes,
-                    totalBytesRead,
-                    messageLength - totalBytesRead,
-                    cancellationToken);
-
-                if (bytesRead == 0 || cancellationToken.IsCancellationRequested) return null;
-                totalBytesRead += bytesRead;
+                int chunk = await stream.ReadAsync(body, received, bodyLength - received, cancellationToken);
+                if (chunk == 0) return null;
+                received += chunk;
             }
 
-            // JSON 변환
-            string json = Encoding.UTF8.GetString(messageBytes);
+            string json = Encoding.UTF8.GetString(body);
+
             try
             {
-                // 먼저 BaseMessage로 파싱하여 msg 타입 확인
-                using JsonDocument doc = JsonDocument.Parse(json);
-                if (!doc.RootElement.TryGetProperty("msg", out JsonElement msgElement))
+                using var doc = JsonDocument.Parse(json);
+
+                if (!doc.RootElement.TryGetProperty("msg", out var msgProp))
                     return null;
 
-                MsgType msgType = (MsgType)Enum.Parse(typeof(MsgType), msgElement.GetString() ?? "");
+                string? msgString = msgProp.GetString();
+                if (!Enum.TryParse(msgString, out MsgType msgType))
+                    return null;
 
-                // msg 타입에 따라 적절한 클래스로 역직렬화
-                BaseMessage? message = msgType switch
+                return msgType switch
                 {
-                    MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json),
-                    MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json),
-                    MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json),
-                    MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json),
-                    MsgType.START_REQ => JsonSerializer.Deserialize<StartReq>(json),
-                    MsgType.START_RES => JsonSerializer.Deserialize<StartRes>(json),
-                    MsgType.DOOR_REQ => JsonSerializer.Deserialize<DoorReq>(json),
-                    MsgType.DOOR_RES => JsonSerializer.Deserialize<DoorRes>(json),
-                    MsgType.TRUNK_REQ => JsonSerializer.Deserialize<TrunkReq>(json),
-                    MsgType.TRUNK_RES => JsonSerializer.Deserialize<TrunkRes>(json),
-                    MsgType.AIR_REQ => JsonSerializer.Deserialize<AirReq>(json),
-                    MsgType.AIR_RES => JsonSerializer.Deserialize<AirRes>(json),
-                    MsgType.CLI_REQ => JsonSerializer.Deserialize<CliReq>(json),
-                    MsgType.CLI_RES => JsonSerializer.Deserialize<CliRes>(json),
-                    MsgType.HEAT_REQ => JsonSerializer.Deserialize<HeatReq>(json),
-                    MsgType.HEAT_RES => JsonSerializer.Deserialize<HeatRes>(json),
-                    MsgType.LIGHT_REQ => JsonSerializer.Deserialize<LightReq>(json),
-                    MsgType.LIGHT_RES => JsonSerializer.Deserialize<LightRes>(json),
-                    MsgType.CONTROL_REQ => JsonSerializer.Deserialize<ControlReq>(json),
-                    MsgType.CONTROL_RES => JsonSerializer.Deserialize<ControlRes>(json),
-                    MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json),
-                    MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json),
-                    MsgType.STOP_CHARGING_REQ => JsonSerializer.Deserialize<StopChargingReq>(json),
-                    MsgType.STOP_CHARGING_RES => JsonSerializer.Deserialize<StopChargingRes>(json),
+                    MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, JsonOptions),
+                    MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, JsonOptions),
+
+                    MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json, JsonOptions),
+                    MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json, JsonOptions),
+
+                    MsgType.START_REQ => JsonSerializer.Deserialize<StartReq>(json, JsonOptions),
+                    MsgType.START_RES => JsonSerializer.Deserialize<StartRes>(json, JsonOptions),
+
+                    MsgType.DOOR_REQ => JsonSerializer.Deserialize<DoorReq>(json, JsonOptions),
+                    MsgType.DOOR_RES => JsonSerializer.Deserialize<DoorRes>(json, JsonOptions),
+
+                    MsgType.TRUNK_REQ => JsonSerializer.Deserialize<TrunkReq>(json, JsonOptions),
+                    MsgType.TRUNK_RES => JsonSerializer.Deserialize<TrunkRes>(json, JsonOptions),
+
+                    MsgType.AIR_REQ => JsonSerializer.Deserialize<AirReq>(json, JsonOptions),
+                    MsgType.AIR_RES => JsonSerializer.Deserialize<AirRes>(json, JsonOptions),
+
+                    MsgType.CLI_REQ => JsonSerializer.Deserialize<CliReq>(json, JsonOptions),
+                    MsgType.CLI_RES => JsonSerializer.Deserialize<CliRes>(json, JsonOptions),
+
+                    MsgType.HEAT_REQ => JsonSerializer.Deserialize<HeatReq>(json, JsonOptions),
+                    MsgType.HEAT_RES => JsonSerializer.Deserialize<HeatRes>(json, JsonOptions),
+
+                    MsgType.LIGHT_REQ => JsonSerializer.Deserialize<LightReq>(json, JsonOptions),
+                    MsgType.LIGHT_RES => JsonSerializer.Deserialize<LightRes>(json, JsonOptions),
+
+                    MsgType.CONTROL_REQ => JsonSerializer.Deserialize<ControlReq>(json, JsonOptions),
+                    MsgType.CONTROL_RES => JsonSerializer.Deserialize<ControlRes>(json, JsonOptions),
+
+                    MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, JsonOptions),
+                    MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, JsonOptions),
+
+                    MsgType.STOP_CHARGING_REQ => JsonSerializer.Deserialize<StopChargingReq>(json, JsonOptions),
+                    MsgType.STOP_CHARGING_RES => JsonSerializer.Deserialize<StopChargingRes>(json, JsonOptions),
+
                     _ => null
                 };
-                return message;
             }
-            catch (JsonException)
-            {
-                return null;
-            }
-            catch (Exception)
+            catch
             {
                 return null;
             }
         }
 
+        // ============================
+        // 🔵 직렬화 (송신)
+        // ============================
         public static byte[] SerializeMessage(BaseMessage message)
         {
-            var options = new JsonSerializerOptions
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
+            string json = JsonSerializer.Serialize(message, message.GetType(), JsonOptions);
+            byte[] body = Encoding.UTF8.GetBytes(json);
 
-            string json = JsonSerializer.Serialize(message, message.GetType(), options);
-            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+            byte[] header = BitConverter.GetBytes(body.Length);
+            byte[] packet = new byte[header.Length + body.Length];
 
-            byte[] lengthBytes = BitConverter.GetBytes(jsonBytes.Length);
-            byte[] result = new byte[4 + jsonBytes.Length];
-            Array.Copy(lengthBytes, 0, result, 0, 4);
-            Array.Copy(jsonBytes, 0, result, 4, jsonBytes.Length);
-            return result;
+            Array.Copy(header, 0, packet, 0, header.Length);
+            Array.Copy(body, 0, packet, header.Length, body.Length);
+
+            return packet;
         }
     }
 
-    // 회원가입 요청
+    // ============================
+    // 메시지 클래스들 (클라와 동일)
+    // ============================
     public class EnrollReq : BaseMessage
     {
         public string? id { get; set; }
         public string? password { get; set; }
         public string? username { get; set; }
-        public string? carmodel { get; set; }
-
-        public EnrollReq()
-        {
-            msg = MsgType.ENROLL_REQ;
-        }
+        public string? car_model { get; set; }
+        public EnrollReq() { msg = MsgType.ENROLL_REQ; }
     }
 
-    // 회원가입 응답
     public class EnrollRes : BaseMessage
     {
         public bool registered { get; set; }
-
-        public EnrollRes()
-        {
-            msg = MsgType.ENROLL_RES;
-        }
+        public EnrollRes() { msg = MsgType.ENROLL_RES; }
     }
 
     public class LoginReq : BaseMessage
     {
         public string? id { get; set; }
         public string? password { get; set; }
-
-        public LoginReq()
-        {
-            msg = MsgType.LOGIN_REQ;
-        }
+        public LoginReq() { msg = MsgType.LOGIN_REQ; }
     }
 
     public class LoginRes : BaseMessage
     {
         public bool logined { get; set; }
-
-        public LoginRes()
-        {
-            msg = MsgType.LOGIN_RES;
-        }
+        public LoginRes() { msg = MsgType.LOGIN_RES; }
     }
 
-    // 문 제어 요청
     public class DoorReq : BaseMessage
     {
-        public bool open { get; set; }
-
-        public DoorReq()
-        {
-            msg = MsgType.DOOR_REQ;
-        }
+        public bool door { get; set; }
+        public DoorReq() { msg = MsgType.DOOR_REQ; }
     }
 
-    // 문 제어 응답
     public class DoorRes : BaseMessage
     {
-        public bool doorstatus { get; set; }
-
-        public DoorRes()
-        {
-            msg = MsgType.DOOR_RES;
-        }
+        public bool door_status { get; set; }
+        public DoorRes() { msg = MsgType.DOOR_RES; }
     }
 
-    // 상태 요청 (클라이언트 → 서버)
     public class StatusReq : BaseMessage
     {
-        public bool carstatus { get; set; }
-
-        public StatusReq()
-        {
-            msg = MsgType.STATUS_REQ;
-        }
+        public bool car_status { get; set; }
+        public StatusReq() { msg = MsgType.STATUS_REQ; }
     }
 
-    // 상태 응답 (서버 → 클라이언트)
     public class StatusRes : BaseMessage
     {
         public bool charging { get; set; }
         public bool parking { get; set; }
         public bool driving { get; set; }
         public double battery { get; set; }
-
-        public StatusRes()
-        {
-            msg = MsgType.STATUS_RES;
-        }
+        public StatusRes() { msg = MsgType.STATUS_RES; }
     }
 
-    // 시동 제어
     public class StartReq : BaseMessage
     {
         public bool active { get; set; }
@@ -244,24 +225,22 @@ namespace SERVER.Protocol
 
     public class StartRes : BaseMessage
     {
-        public bool activestatus { get; set; }
+        public bool active_status { get; set; }
         public StartRes() { msg = MsgType.START_RES; }
     }
 
-    // 트렁크 제어
     public class TrunkReq : BaseMessage
     {
-        public bool open { get; set; }
+        public bool trunk { get; set; }
         public TrunkReq() { msg = MsgType.TRUNK_REQ; }
     }
 
     public class TrunkRes : BaseMessage
     {
-        public bool open { get; set; }
+        public bool trunk_status { get; set; }
         public TrunkRes() { msg = MsgType.TRUNK_RES; }
     }
 
-    // 에어컨 제어
     public class AirReq : BaseMessage
     {
         public bool air { get; set; }
@@ -270,24 +249,22 @@ namespace SERVER.Protocol
 
     public class AirRes : BaseMessage
     {
-        public bool airstatus { get; set; }
+        public bool air_status { get; set; }
         public AirRes() { msg = MsgType.AIR_RES; }
     }
 
-    // 온도 제어
     public class CliReq : BaseMessage
     {
-        public int Temp { get; set; }
+        public int temp { get; set; }
         public CliReq() { msg = MsgType.CLI_REQ; }
     }
 
     public class CliRes : BaseMessage
     {
-        public bool tempresult { get; set; }
+        public bool temp_status { get; set; }
         public CliRes() { msg = MsgType.CLI_RES; }
     }
 
-    // 열선 제어
     public class HeatReq : BaseMessage
     {
         public bool heat { get; set; }
@@ -296,11 +273,10 @@ namespace SERVER.Protocol
 
     public class HeatRes : BaseMessage
     {
-        public bool heatstatus { get; set; }
+        public bool heat_status { get; set; }
         public HeatRes() { msg = MsgType.HEAT_RES; }
     }
 
-    // 라이트 제어
     public class LightReq : BaseMessage
     {
         public bool light { get; set; }
@@ -309,11 +285,10 @@ namespace SERVER.Protocol
 
     public class LightRes : BaseMessage
     {
-        public bool lightstatus { get; set; }
+        public bool light_status { get; set; }
         public LightRes() { msg = MsgType.LIGHT_RES; }
     }
 
-    // 원격주차 제어(UP/DOWN 또는 PARK/DRIVE)
     public class ControlReq : BaseMessage
     {
         public bool control { get; set; }
@@ -322,7 +297,7 @@ namespace SERVER.Protocol
 
     public class ControlRes : BaseMessage
     {
-        public bool controlstatus { get; set; }
+        public bool control_status { get; set; }
         public ControlRes() { msg = MsgType.CONTROL_RES; }
     }
 
@@ -334,7 +309,7 @@ namespace SERVER.Protocol
 
     public class StopChargingRes : BaseMessage
     {
-        public bool stopstatus { get; set; }
+        public bool stop_status { get; set; }
         public StopChargingRes() { msg = MsgType.STOP_CHARGING_RES; }
     }
 }
