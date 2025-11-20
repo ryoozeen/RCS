@@ -118,8 +118,8 @@ namespace SERVER
                 return;
             }
 
-            // STATUS_REQ와 LOGIN_RES는 로그 출력하지 않음
-            if (message.msg == MsgType.STATUS_REQ || message.msg == MsgType.LOGIN_RES)
+            // LOGIN_RES는 로그 출력하지 않음
+            if (message.msg == MsgType.LOGIN_RES)
             {
                 await RouteMessage(clientId, message);
                 return;
@@ -208,11 +208,11 @@ namespace SERVER
                     }
                     break;
                 case MsgType.STATUS_REQ:
-                    // STATUS_REQ는 대기상태이므로 로그 출력하지 않음
-                    return "";
+                    content = "배터리 값 요청";
+                    break;
 
                 case MsgType.STATUS_RES:
-                    if (message is StatusRes res4) content = $"상태 응답: Charging={res4.charging}, Battery={res4.battery}";
+                    content = "배터리 값 전송 완료";
                     break;
 
                 case MsgType.ENROLL_REQ:
@@ -476,9 +476,23 @@ namespace SERVER
 
                     // 제어 응답 (RCS로 전달)
                     case MsgType.START_RES:
-                        // START_RES는 DOBOTLAB에서 온 것이므로 클라이언트로 전달
+                        // START_RES를 받으면 STATUS_RES (driving: true)를 클라이언트로 전송
+                        if (message is StartRes startRes && startRes.active_status)
+                        {
+                            response = new StatusRes
+                            {
+                                driving = true,
+                                parking = false,
+                                charging = false
+                            };
+                            targetClientId = _tcpServer?.GetClientByType("RCS");
+                        }
+                        // START_RES도 원본 그대로 전달 (하위 호환성)
                         forward = message;
-                        targetClientId = _tcpServer?.GetClientByType("RCS");
+                        if (targetClientId == null)
+                        {
+                            targetClientId = _tcpServer?.GetClientByType("RCS");
+                        }
                         break;
 
                     case MsgType.DOOR_RES:
@@ -488,23 +502,54 @@ namespace SERVER
                     case MsgType.HEAT_RES:
                     case MsgType.LIGHT_RES:
                     case MsgType.CONTROL_RES:
-                        // CONTROL_RES 처리: reason에 따라 parking 또는 driving 설정
+                        // CONTROL_RES 처리: reason에 따라 STATUS_RES (parking/driving) 생성 및 전송
                         if (message is ControlRes controlResMsg)
                         {
+                            // reason에 따라 STATUS_RES 생성
                             if (!string.IsNullOrEmpty(controlResMsg.reason))
                             {
                                 if (controlResMsg.reason.Contains("주차"))
                                 {
-                                    controlResMsg.parking = true;
+                                    // 주차 성공 시 STATUS_RES (parking: true) 전송
+                                    response = new StatusRes
+                                    {
+                                        parking = true,
+                                        driving = false,
+                                        charging = false
+                                    };
+                                    targetClientId = _tcpServer?.GetClientByType("RCS");
                                 }
                                 else if (controlResMsg.reason.Contains("출차"))
                                 {
-                                    controlResMsg.driving = true;
+                                    // 출차 성공 시 STATUS_RES (driving: true) 전송
+                                    response = new StatusRes
+                                    {
+                                        driving = true,
+                                        parking = false,
+                                        charging = false
+                                    };
+                                    targetClientId = _tcpServer?.GetClientByType("RCS");
                                 }
                             }
+                            // control_status가 true이고 reason이 없으면 주차 성공으로 간주
+                            else if (controlResMsg.control_status)
+                            {
+                                // 주차 성공 시 STATUS_RES (parking: true) 전송
+                                response = new StatusRes
+                                {
+                                    parking = true,
+                                    driving = false,
+                                    charging = false
+                                };
+                                targetClientId = _tcpServer?.GetClientByType("RCS");
+                            }
                         }
+                        // CONTROL_RES도 원본 그대로 전달 (하위 호환성)
                         forward = message;
-                        targetClientId = _tcpServer?.GetClientByType("RCS");
+                        if (targetClientId == null)
+                        {
+                            targetClientId = _tcpServer?.GetClientByType("RCS");
+                        }
                         break;
                     case MsgType.STATUS_RES:
                     case MsgType.STOP_CHARGING_RES:
