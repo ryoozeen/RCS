@@ -1,94 +1,142 @@
-﻿using System;
+﻿using SERVER.Protocol;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using SERVER.Protocol; // BaseMessage 사용을 위해 필수
+using System.Threading;
 
 namespace SERVER.Network
 {
     public class ClientHandler
     {
-        private TcpClient _client;
-        private string _clientId;
-        private NetworkStream _stream;
+        private readonly TcpClient _client;
+        private CancellationToken _cancellationToken; // readonly 제거 (RunAsync에서 받기 위해)
+        private readonly string _clientId; // 클라이언트 식별자 
 
-        // TcpServer에서 구독할 이벤트들
-        public event Action<BaseMessage>? OnMessageReceived;
-        public event Action? OnDisconnected;
+        private NetworkStream? _stream;
 
+        public string ClientType { get; set; } = "Unknown";
+
+        public event Action<string, BaseMessage>? OnMessageReceived;
+
+        public event Action<string>? OnClientDisconnected;
+
+        // [기존 생성자 유지하되, TcpServer 호환을 위해 오버로딩 추가]
+        public ClientHandler(TcpClient client, CancellationToken cancellationToken)
+        {
+            _client = client;
+            _cancellationToken = cancellationToken;
+            _clientId = _client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
+        }
+
+        // [추가됨] TcpServer에서 호출하는 생성자 (문자열 ID 버전)
         public ClientHandler(TcpClient client, string clientId)
         {
             _client = client;
             _clientId = clientId;
-            _stream = client.GetStream();
+            // 토큰은 나중에 RunAsync에서 받음
         }
 
-        // 클라이언트와 데이터를 주고받는 메인 루프
-        public async Task RunAsync(CancellationToken ct)
+        public async Task SendMessageAsync(BaseMessage message)
+        {
+            if (_stream == null || !_client.Connected)
+            {
+                return;
+            }
+
+            try
+            {
+                byte[] messageBytes = BaseMessage.SerializeMessage(message);
+
+                await _stream.WriteAsync(messageBytes, 0, messageBytes.Length, _cancellationToken);
+            }
+            catch (Exception)
+            {
+                // 전송 오류
+            }
+        }
+
+        // [기존 메서드명 유지]
+        public async Task HandleClientAsync()
         {
             try
             {
-                while (!ct.IsCancellationRequested && _client.Connected)
-                {
-                    // Protocol.cs에 있는 DeserializeMessageAsync 사용
-                    // 스트림에서 메시지를 읽어서 BaseMessage 객체로 변환
-                    BaseMessage? message = await BaseMessage.DeserializeMessageAsync(_stream, ct);
+                _stream = _client.GetStream();
 
-                    if (message == null)
+                while (!_cancellationToken.IsCancellationRequested)
+                {
+                    try
                     {
-                        // 연결이 끊기거나 잘못된 데이터 수신 시 종료
+                        BaseMessage? message = await BaseMessage.DeserializeMessageAsync(_stream, _cancellationToken);
+
+                        if (message == null)
+                        {
+                            break;
+                        }
+                        OnMessageReceived?.Invoke(_clientId, message);
+                    }
+                    catch (OperationCanceledException)
+                    {
                         break;
                     }
-
-                    // 메시지 수신 알림 (TcpServer로 전달됨)
-                    OnMessageReceived?.Invoke(message);
+                    catch (Exception ex)
+                    {
+                        // 예외 발생 시 로그 출력을 위해 이벤트 발생
+                        OnMessageReceived?.Invoke(_clientId, new BaseMessage
+                        {
+                            msg = MsgType.STATUS_REQ, // 임시로 사용
+                            reason = $"[ERROR] {ex.Message}"
+                        });
+                        break;
+                    }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // 연결 종료 등의 일반적인 예외는 무시하거나 로그 출력
-                Console.WriteLine($"Client Loop Error ({_clientId}): {ex.Message}");
+                // 연결 오류
             }
             finally
             {
+                // [수정] finally 블록 코드를 Disconnect 메서드로 감싸서 재사용
                 Disconnect();
             }
         }
 
-        // 메시지 전송 (서버 -> 클라이언트)
-        public async Task SendMessageAsync(BaseMessage message)
-        {
-            if (!_client.Connected) return;
+        // =======================================================================
+        // [추가된 부분] TcpServer와의 호환성을 위해 추가된 메서드들
+        // =======================================================================
 
-            try
-            {
-                // Protocol.cs의 SerializeMessage 사용
-                byte[] packet = BaseMessage.SerializeMessage(message);
-                await _stream.WriteAsync(packet, 0, packet.Length);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Send Error ({_clientId}): {ex.Message}");
-            }
+        // 1. TcpServer가 호출하는 RunAsync (기존 HandleClientAsync로 연결)
+        public async Task RunAsync(CancellationToken ct)
+        {
+            _cancellationToken = ct; // 토큰 설정
+            await HandleClientAsync();
         }
 
-        // 연결 종료 처리
+        // 2. TcpServer가 호출하는 Disconnect (기존 finally 블록 로직 이동)
         public void Disconnect()
         {
+            OnClientDisconnected?.Invoke(_clientId);
+
             try
             {
-                if (_client.Connected)
-                {
-                    _client.Close();
-                }
-                // 연결 해제 사실을 TcpServer에 알림
-                OnDisconnected?.Invoke();
+                _stream?.Close();
             }
-            catch
+            catch { } // 무시
+
+            try
             {
-                // 이미 닫힌 경우 무시
+                _client?.Close();
             }
+            catch { } // 무시
+
+            try
+            {
+                _client?.Dispose();
+            }
+            catch { } // 무시
         }
     }
 }
