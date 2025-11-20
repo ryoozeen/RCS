@@ -25,7 +25,7 @@ namespace DotBotCarClient.Views
             InitializeComponent();
 
             // 첫 로드시 상태 요청
-            RequestStatus();
+            RequestBatteryStatus();
 
             // 최신 시간 반영
             this.Loaded += (s, e) =>
@@ -37,7 +37,7 @@ namespace DotBotCarClient.Views
             // 5초마다 지속 요청
             _statusTimer = new DispatcherTimer();
             _statusTimer.Interval = TimeSpan.FromSeconds(3);
-            _statusTimer.Tick += (s, e) => RequestStatus();
+            _statusTimer.Tick += (s, e) => RequestBatteryStatus();
             _statusTimer.Start();
 
             // 주차 시간 갱신
@@ -69,6 +69,12 @@ namespace DotBotCarClient.Views
                 case MsgType.STATUS_RES:
                     HandleStatusRes(msg as StatusRes);
                     break;
+
+                case MsgType.BATTERY_RES:
+                    {
+                        HandleBatteryRes(msg as BatteryRes);
+                        break;
+                    }
 
                 case MsgType.START_RES:
                     {
@@ -108,18 +114,18 @@ namespace DotBotCarClient.Views
         // ======================================================
         // 상태 요청
         // ======================================================
-        private async void RequestStatus()
+        private async void RequestBatteryStatus()
         {
-            var req = new StatusReq
+            var req = new BatteryReq
             {
-                car_status = true
+                battery = true
             };
 
             await App.Network.SendAsync(req);
         }
 
         // ======================================================
-        // STATUS_RES 처리 (UI 업데이트)
+        // STATUS_RES / BATEERY_RES 처리 (UI 업데이트)
         // ======================================================
         private void HandleStatusRes(StatusRes? st)
         {
@@ -127,17 +133,20 @@ namespace DotBotCarClient.Views
 
             Dispatcher.Invoke(() =>
             {
-                BatteryText.Text = $"{st.battery}%";
-
-                string state = "대기 중";
-                if (st.charging) state = "충전 중";
-                else if (st.driving) state = "주행 중";
-                else if (st.parking) state = "주차 중";
-
-                int range = (int)(400 * st.battery / 100.0);
-                RangeText.Text = $"Range : {range}km";
+                string state = "대기";
+                if (st.driving) state = "운행";
 
                 CarStateText.Text = $"차량 상태 : {state}";
+            });
+        }
+        private void HandleBatteryRes(BatteryRes? br)
+        {
+            if (br == null) return;
+            Dispatcher.Invoke(() =>
+            {
+                BatteryText.Text = $"{(int)(br.battery_status * 100)}%";
+                int range = (int)(400 * br.battery_status);
+                RangeText.Text = $"Range : {range}km";
             });
         }
         // ======================================================
@@ -147,13 +156,13 @@ namespace DotBotCarClient.Views
         {
             if (!App.IsParked || App.ParkingStartTime == DateTime.MinValue)
             {
-                CarStateText.Text = "차량 상태 : 주행 중";
+                CarStateText.Text = "차량 상태 : 대기";
                 LocationText.Text = "주차 위치: 없음";
                 return;
             }
 
             int minutesPassed = (int)(DateTime.Now - App.ParkingStartTime).TotalMinutes;
-            CarStateText.Text = "차량 상태 : 주차 중";
+            CarStateText.Text = "차량 상태 : 주차";
 
             if (minutesPassed >= 0 && minutesPassed < 60)
                 LocationText.Text = $"주차 위치: 집 ({minutesPassed}분 전)";

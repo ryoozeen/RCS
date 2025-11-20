@@ -174,15 +174,6 @@
                        FontSize="18"
                        HorizontalAlignment="Center"
                        Margin="0,30,0,10"/>
-
-            <!-- 충전 중 표기 -->
-            <TextBlock x:Name="ChargeStatusText"
-                       Text="충전 중..."
-                       FontSize="18"
-                       Foreground="#4CAF50"
-                       FontWeight="SemiBold"
-                       HorizontalAlignment="Center"
-                       Margin="0,25,0,10" Height="20"/>
         </StackPanel>
 
 

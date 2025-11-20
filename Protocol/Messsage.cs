@@ -3,7 +3,8 @@
     // 메시지 타입
     public enum MsgType
     {
-        CLIENT_IDENTIFY,
+        CLIENT_IDENTIFY_REQ,
+        CLIENT_IDENTIFY_RES,
         ENROLL_REQ,
         ENROLL_RES,
         LOGIN_REQ,
@@ -26,6 +27,8 @@
         CONTROL_RES,
         STATUS_REQ,
         STATUS_RES,
+        BATTERY_REQ,
+        BATTERY_RES,
         STOP_CHARGING_REQ,
         STOP_CHARGING_RES
     }
@@ -35,12 +38,20 @@
         public MsgType msg { get; set; }
         public string? reason { get; set; }
     }
-    public class ClientIdentify : BaseMessage
+    public class ClientIdentifyReq : BaseMessage
     {
         public string? client_name { get; set; }
-        public ClientIdentify()
+        public ClientIdentifyReq()
         {
-            msg = MsgType.CLIENT_IDENTIFY;
+            msg = MsgType.CLIENT_IDENTIFY_REQ;
+        }
+    }
+    public class ClientIdentifyRes : BaseMessage
+    {
+        public bool identified { get; set; }
+        public ClientIdentifyRes()
+        {
+            msg = MsgType.CLIENT_IDENTIFY_RES;
         }
     }
     // 회원가입 요청
@@ -220,6 +231,22 @@
         public StatusRes()
         {
             msg = MsgType.STATUS_RES;
+        }
+    }
+    public class BatteryReq : BaseMessage
+    {
+        public bool battery { get; set; }
+        public BatteryReq()
+        {
+            msg = MsgType.BATTERY_REQ;
+        }
+    }
+    public class BatteryRes : BaseMessage
+    {
+        public double battery_status { get; set; }
+        public BatteryRes()
+        {
+            msg = MsgType.BATTERY_RES;
         }
     }
 }

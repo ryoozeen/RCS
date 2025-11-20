@@ -155,7 +155,8 @@ namespace DotBotCarClient.Protocol
 
                 BaseMessage? result = type switch
                 {
-                    MsgType.CLIENT_IDENTIFY => JsonSerializer.Deserialize<ClientIdentify>(json, options),
+                    MsgType.CLIENT_IDENTIFY_REQ => JsonSerializer.Deserialize<ClientIdentifyReq>(json, options),
+                    MsgType.CLIENT_IDENTIFY_RES => JsonSerializer.Deserialize<ClientIdentifyRes>(json, options),
 
                     MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, options),
                     MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, options),
@@ -189,6 +190,9 @@ namespace DotBotCarClient.Protocol
 
                     MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
                     MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
+
+                    MsgType.BATTERY_REQ => JsonSerializer.Deserialize<BatteryReq>(json, options),
+                    MsgType.BATTERY_RES => JsonSerializer.Deserialize<BatteryRes>(json, options),
 
                     // 필요하면 추가
                     _ => JsonSerializer.Deserialize<BaseMessage>(json, options),
