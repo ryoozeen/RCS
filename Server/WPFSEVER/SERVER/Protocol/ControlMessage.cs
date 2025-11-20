@@ -114,28 +114,40 @@ namespace SERVER.Protocol
                 {
                     MsgType.CLIENT_IDENTIFY_REQ => JsonSerializer.Deserialize<ClientIdentifyReq>(json, options),
                     MsgType.CLIENT_IDENTIFY_RES => JsonSerializer.Deserialize<ClientIdentifyRes>(json, options),
+                    
                     MsgType.ENROLL_REQ => JsonSerializer.Deserialize<EnrollReq>(json, options),
                     MsgType.ENROLL_RES => JsonSerializer.Deserialize<EnrollRes>(json, options),
+                    
                     MsgType.LOGIN_REQ => JsonSerializer.Deserialize<LoginReq>(json, options),
                     MsgType.LOGIN_RES => JsonSerializer.Deserialize<LoginRes>(json, options),
+                    
                     MsgType.START_REQ => JsonSerializer.Deserialize<StartReq>(json, options),
                     MsgType.START_RES => JsonSerializer.Deserialize<StartRes>(json, options),
+                    
                     MsgType.DOOR_REQ => JsonSerializer.Deserialize<DoorReq>(json, options),
                     MsgType.DOOR_RES => JsonSerializer.Deserialize<DoorRes>(json, options),
+                    
                     MsgType.TRUNK_REQ => JsonSerializer.Deserialize<TrunkReq>(json, options),
                     MsgType.TRUNK_RES => JsonSerializer.Deserialize<TrunkRes>(json, options),
+                    
                     MsgType.AIR_REQ => JsonSerializer.Deserialize<AirReq>(json, options),
                     MsgType.AIR_RES => JsonSerializer.Deserialize<AirRes>(json, options),
+                    
                     MsgType.CLI_REQ => JsonSerializer.Deserialize<CliReq>(json, options),
                     MsgType.CLI_RES => JsonSerializer.Deserialize<CliRes>(json, options),
+                    
                     MsgType.HEAT_REQ => JsonSerializer.Deserialize<HeatReq>(json, options),
                     MsgType.HEAT_RES => JsonSerializer.Deserialize<HeatRes>(json, options),
+                    
                     MsgType.LIGHT_REQ => JsonSerializer.Deserialize<LightReq>(json, options),
                     MsgType.LIGHT_RES => JsonSerializer.Deserialize<LightRes>(json, options),
+                    
                     MsgType.CONTROL_REQ => JsonSerializer.Deserialize<ControlReq>(json, options),
                     MsgType.CONTROL_RES => JsonSerializer.Deserialize<ControlRes>(json, options),
+                    
                     MsgType.STATUS_REQ => JsonSerializer.Deserialize<StatusReq>(json, options),
                     MsgType.STATUS_RES => JsonSerializer.Deserialize<StatusRes>(json, options),
+                    
                     MsgType.STOP_CHARGING_REQ => JsonSerializer.Deserialize<StopChargingReq>(json, options),
                     MsgType.STOP_CHARGING_RES => JsonSerializer.Deserialize<StopChargingRes>(json, options),
                     _ => null

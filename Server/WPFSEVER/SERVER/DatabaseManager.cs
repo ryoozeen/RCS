@@ -38,7 +38,7 @@ namespace SERVER.Network
                 if (rowsAffected > 0)
                 {
                     // 회원가입 성공 시 car_statrs 초기값 삽입 (로컬 로직 유지)
-                    string sqlStatus = "INSERT INTO car_statrs (id, status, start, control) VALUES (@id, '주차중', 'off', '주차')";
+                    string sqlStatus = "INSERT INTO car_status (id, status, start, control) VALUES (@id, '주차중', 'off', '주차')";
                     await using var cmdStatus = new MySqlCommand(sqlStatus, conn);
                     cmdStatus.Parameters.AddWithValue("@id", message.id);
                     await cmdStatus.ExecuteNonQueryAsync();
