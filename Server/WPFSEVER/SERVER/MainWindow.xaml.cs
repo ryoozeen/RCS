@@ -132,25 +132,8 @@ namespace SERVER
 
         private string FormatLogMessage(string clientId, BaseMessage message, string direction = "")
         {
-            // 클라이언트 타입 가져오기 (Unknown이면 메시지 타입으로 추론)
+            // 클라이언트 타입 가져오기 (CLIENT_IDENTIFY_REQ에서 저장된 client_name 사용)
             string clientType = _tcpServer?.GetClientType(clientId) ?? "Unknown";
-            if (clientType == "Unknown")
-            {
-                // 메시지 타입으로 클라이언트 타입 추론
-                if (message.msg == MsgType.LOGIN_REQ || message.msg == MsgType.STATUS_REQ || 
-                    message.msg == MsgType.START_REQ || message.msg == MsgType.CONTROL_REQ ||
-                    message.msg == MsgType.DOOR_REQ || message.msg == MsgType.TRUNK_REQ ||
-                    message.msg == MsgType.AIR_REQ || message.msg == MsgType.CLI_REQ ||
-                    message.msg == MsgType.HEAT_REQ || message.msg == MsgType.LIGHT_REQ)
-                {
-                    clientType = "RCS";
-                }
-                else if (message.msg == MsgType.START_RES || message.msg == MsgType.CONTROL_RES || 
-                         message.msg == MsgType.STATUS_RES)
-                {
-                    clientType = "DOBOTLAB";
-                }
-            }
             
             string content = "";
 
@@ -389,14 +372,8 @@ namespace SERVER
                         // 로그인 요청 처리
                         if (message is LoginReq loginReq)
                         {
-                            // 클라이언트 타입 가져오기 (Unknown이면 RCS로 설정)
+                            // 클라이언트 타입 가져오기 (CLIENT_IDENTIFY_REQ에서 저장된 client_name 사용)
                             string clientType = _tcpServer?.GetClientType(clientId) ?? "Unknown";
-                            if (clientType == "Unknown")
-                            {
-                                // LOGIN_REQ는 RCS 클라이언트가 보내는 메시지
-                                clientType = "RCS";
-                        _tcpServer?.IdentifyClient(clientId, clientType);
-                            }
                             
                             // DB 없으므로 간단한 검증 (id와 password가 비어있지 않으면 성공)
                             bool loginSuccess = !string.IsNullOrEmpty(loginReq.id) && !string.IsNullOrEmpty(loginReq.password);

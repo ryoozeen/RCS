@@ -14,7 +14,6 @@ namespace SERVER.Network
             _connectionString = connectionString;
         }
 
-        // ** 병합 완료 ** (최신 코드: EnrollReq를 받아서 rowsAffected(int)를 반환)
         public async Task<int> EnrollUserAsync(EnrollReq message)
         {
             if (message.id == null || message.password == null)
@@ -48,8 +47,6 @@ namespace SERVER.Network
                 return 0;
             }
         }
-
-        // ** 병합 완료 ** (최신 코드: LoginReq를 받아서 로그인된 유저 수(int)를 반환)
         public async Task<int> LoginUserAsync(LoginReq message)
         {
             if (message.id == null || message.password == null)
