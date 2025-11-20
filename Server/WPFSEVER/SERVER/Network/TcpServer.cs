@@ -1,197 +1,121 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SERVER.Protocol;
-using System.Collections.Concurrent; 
 
 namespace SERVER.Network
 {
     public class TcpServer
     {
-        private TcpListener? _listener;
-        private bool _isRunning = false;
-        private readonly int _port;
-        // private readonly List<TcpClient> _clients = new List<TcpClient>();
-        private CancellationTokenSource? _cancellationTokenSource;
+        private TcpListener _listener;
 
+        // 클라이언트 핸들러 목록 (ID -> Handler)
+        private ConcurrentDictionary<string, ClientHandler> _clients = new ConcurrentDictionary<string, ClientHandler>();
 
-        // (Key: clientId, Value: ClientHandler)
-        private readonly ConcurrentDictionary<string, ClientHandler> _clientHandlers = new ConcurrentDictionary<string, ClientHandler>();
+        // ★ 추가된 부분: 클라이언트 타입 관리 (ID -> Type 문자열)
+        private ConcurrentDictionary<string, string> _clientTypes = new ConcurrentDictionary<string, string>();
 
-        // 이벤트: 클라이언트로부터 메시지 수신 시 발생
         public event Action<string, BaseMessage>? OnMessageReceived;
-        
-        // 이벤트: 클라이언트 연결 시 발생
         public event Action<string>? OnClientConnected;
-        
-        // 이벤트: 클라이언트 연결 해제 시 발생 (clientId, clientType)
-        public event Action<string, string>? OnClientDisconnected;
+        public event Action<string, string>? OnClientDisconnected; // 타입 정보 포함
 
-        // 생성자
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+
         public TcpServer(int port)
         {
-            _port = port;
+            _listener = new TcpListener(IPAddress.Any, port);
         }
 
-        // [신규] 특정 클라이언트에게 메시지 전송 (MainWindow에서 사용)
+        public async Task StartAsync()
+        {
+            _listener.Start();
+            _cts = new CancellationTokenSource();
+
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                try
+                {
+                    TcpClient client = await _listener.AcceptTcpClientAsync(_cts.Token);
+                    HandleNewClient(client);
+                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception ex) { Console.WriteLine($"Accept Error: {ex.Message}"); }
+            }
+        }
+
+        private void HandleNewClient(TcpClient client)
+        {
+            string clientId = client.Client.RemoteEndPoint?.ToString() ?? Guid.NewGuid().ToString();
+            var handler = new ClientHandler(client, clientId);
+
+            // 메시지 수신 이벤트 연결
+            handler.OnMessageReceived += (msg) => OnMessageReceived?.Invoke(clientId, msg);
+
+            // 연결 해제 이벤트 연결
+            handler.OnDisconnected += () =>
+            {
+                _clients.TryRemove(clientId, out _);
+                _clientTypes.TryRemove(clientId, out var type);
+                // 연결 해제 시 클라이언트 타입 정보도 같이 보냄
+                OnClientDisconnected?.Invoke(clientId, type ?? "Unknown");
+            };
+
+            _clients.TryAdd(clientId, handler);
+
+            // 처음 접속 시엔 누군지 모르므로 Unknown으로 설정
+            _clientTypes.TryAdd(clientId, "Unknown");
+
+            OnClientConnected?.Invoke(clientId);
+
+            // 핸들러 실행
+            _ = handler.RunAsync(_cts.Token);
+        }
+
+        public void Stop()
+        {
+            _cts.Cancel();
+            _listener.Stop();
+            foreach (var client in _clients.Values)
+            {
+                client.Disconnect();
+            }
+            _clients.Clear();
+            _clientTypes.Clear();
+        }
+
+        // 특정 클라이언트에게 메시지 전송
         public async Task SendToClientAsync(string clientId, BaseMessage message)
         {
-            if (_clientHandlers.TryGetValue(clientId, out ClientHandler? handler))
+            if (_clients.TryGetValue(clientId, out var handler))
             {
-
                 await handler.SendMessageAsync(message);
             }
         }
 
-        public void IdentifyClient(string clientId, string clientType)
+        public string GetClientType(string clientId)
         {
-            if (_clientHandlers.TryGetValue(clientId, out ClientHandler? handler))
+            if (_clientTypes.TryGetValue(clientId, out string? type))
             {
-                handler.ClientType = clientType; // 2단계에서 만든 ClientType 프로퍼티에 할당
+                return type;
             }
+            return "Unknown";
         }
 
-
-        public string? GetClientByType(string clientType)
+        // 2. 클라이언트 식별 (로그인/식별 요청 성공 시 호출)
+        public void IdentifyClient(string clientId, string type)
         {
-            // ClientType이 일치하는 첫 번째 KeyValuePair를 찾음
-            var pair = _clientHandlers.FirstOrDefault(p => p.Value.ClientType == clientType);
-
-            // Key(clientId)를 반환. 없으면 null
-            return pair.Key;
+            _clientTypes.AddOrUpdate(clientId, type, (key, oldVal) => type);
         }
 
-
-        // 서버 시작
-        public Task StartAsync()
+        // 3. 타입으로 클라이언트 ID 찾기 (라우팅용)
+        public string? GetClientByType(string type)
         {
-            if (_isRunning)
-            {
-                return Task.CompletedTask; // 이미 실행 중
-            }
-
-            try
-            {
-                // CancellationTokenSource 생성
-                _cancellationTokenSource = new CancellationTokenSource();
-                var cancellationToken = _cancellationTokenSource.Token;
-
-                // TcpListener 생성 및 시작
-                _listener = new TcpListener(IPAddress.Any, _port);
-                _listener.Start();
-
-                // 상태 플래그 설정
-                _isRunning = true;
-
-                // 연결 수신 루프 시작 (별도 Task로)
-                _ = Task.Run(async () => await AcceptClientsAsync(cancellationToken));
-
-                return Task.CompletedTask; // 성공적으로 시작됨을 반환
-            }
-            catch (Exception ex)
-            {
-                _isRunning = false;
-                return Task.FromException(new Exception($"서버 시작 실패: {ex.Message}"));
-            }
+            // 해당 타입을 가진 첫 번째 클라이언트의 키(ID)를 반환
+            return _clientTypes.FirstOrDefault(x => x.Value == type).Key;
         }
-
-        // 연결 수신 루프
-        private async Task AcceptClientsAsync(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-
-                    TcpClient client = await _listener!.AcceptTcpClientAsync(cancellationToken);
-
-                    // clients 리스트에 추가하는 로직 삭제
-
-                    // ClientHandler 생성 및 시작
-                    ClientHandler handler = new ClientHandler(client, cancellationToken);
-
-                    // ClientId 가져오기
-                    string clientId = client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
-
-                    // 이벤트 구독: ClientHandler의 이벤트를 TcpServer 이벤트로 전달
-                    handler.OnMessageReceived += (id, message) =>
-                    {
-                        OnMessageReceived?.Invoke(id, message);
-                    };
-
-                    handler.OnClientDisconnected += (id) =>
-                    {
-                        // 클라이언트 타입 가져오기
-                        string clientType = "Unknown";
-                        if (_clientHandlers.TryGetValue(id, out ClientHandler? disconnectedHandler))
-                        {
-                            clientType = disconnectedHandler.ClientType;
-                        }
-                        
-                        _clientHandlers.TryRemove(id, out _);
-                        
-                        // 연결 해제 이벤트 발생
-                        OnClientDisconnected?.Invoke(id, clientType);
-                    };
-
-                    _clientHandlers.TryAdd(clientId, handler);
-                    
-                    // 클라이언트 연결 이벤트 발생
-                    OnClientConnected?.Invoke(clientId);
-
-                    // 클라이언트별 메시지 수신 루프 시작 (별도 Task로)
-                    _ = Task.Run(async () => await handler.HandleClientAsync(), cancellationToken);
-
-                }
-                catch (OperationCanceledException)
-                {
-                   
-                    break;
-                }
-                catch (ObjectDisposedException)
-                {
-                    // 서버가 중지되었을 때 정상 종료
-                    break;
-                }
-                catch (Exception)
-                {
-                    // 에러 처리
-                    break;
-                }
-            }
-        }
-
-        // 서버 중지
-        public void Stop()
-        {
-            //이미 중지되었는지 확인
-            if (!_isRunning)
-            {
-                return;
-            }
-
-            // 상태 플래그 변경
-            _isRunning = false;
-
-            // 연결 수신 루프 취소
-            _cancellationTokenSource?.Cancel();
-
-            // TcpListener 중지
-            _listener?.Stop();
-
-
-            _clientHandlers.Clear();
-
-            //리소스 정리
-            _listener = null;
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = null;
-        }
-
     }
 }

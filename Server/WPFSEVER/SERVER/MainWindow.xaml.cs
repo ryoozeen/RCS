@@ -1,47 +1,35 @@
-﻿using System.Text;
+﻿using SERVER.Network;
+using SERVER.Protocol;
+using System;
+using System.ComponentModel;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
-using SERVER.Protocol;
-using SERVER.Network;
-using System.ComponentModel;
-using System.Threading.Tasks;
 
 namespace SERVER
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private TcpServer? _tcpServer;
-        private const int Port = 7000; //포트 번호
-        private readonly DatabaseManager _dbManager;
+        private DatabaseManager? _dbManager; // DB 매니저 추가
+        private const int Port = 7000;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            // ********** DB 연결 문자열 수정됨 **********
-            // Database 이름을 'rcs'로, User=root로 수정
             string connectionString = "Server=localhost;Port=3306;Database=rcs;User=root;Password=1234;";
-
             _dbManager = new DatabaseManager(connectionString);
 
+            // 서버 설정
             _tcpServer = new TcpServer(Port);
             _tcpServer.OnMessageReceived += TcpServer_OnMessageReceived;
             _tcpServer.OnClientConnected += TcpServer_OnClientConnected;
             _tcpServer.OnClientDisconnected += TcpServer_OnClientDisconnected;
         }
 
-        // 서버 연결 버튼
         private async void ServerConnect_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
@@ -51,43 +39,9 @@ namespace SERVER
                 UpdateServerStatus(true);
                 AppendLog("서버가 시작되었습니다.");
             }
-            catch (Exception ex)
-            {
-                AppendLog($"서버 시작 실패: {ex.Message}");
-            }
+            catch (Exception ex) { AppendLog($"서버 시작 실패: {ex.Message}"); }
         }
 
-        // 상태바 업데이트
-        private void UpdateServerStatus(bool isRunning)
-        {
-            if (isRunning)
-            {
-                ServerStatusBar.Background = new SolidColorBrush(Colors.Green);
-                ServerStatusBar.BorderBrush = new SolidColorBrush(Colors.Green);
-                ServerStatusText.Text = "Server Start";
-            }
-            else
-            {
-                ServerStatusBar.Background = new SolidColorBrush(Colors.Red);
-                ServerStatusBar.BorderBrush = new SolidColorBrush(Colors.Red);
-                ServerStatusText.Text = "Server Stop";
-            }
-        }
-
-        // 로그 출력 메서드 (스레드 안전하게 변경)
-        private void AppendLog(string message)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.Invoke(() => AppendLog(message));
-                return;
-            }
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            LogTextBox.AppendText($"[{timestamp}] {message}\r\n");
-            LogTextBox.ScrollToEnd();
-        }
-
-        // 서버 종료 버튼
         private void ServerShutdown_Click(object sender, RoutedEventArgs e)
         {
             if (_tcpServer == null) return;
@@ -97,70 +51,44 @@ namespace SERVER
                 UpdateServerStatus(false);
                 AppendLog("서버가 중지되었습니다.");
             }
-            catch (Exception ex)
-            {
-                AppendLog($"서버 중지 실패: {ex.Message}");
-            }
+            catch (Exception ex) { AppendLog($"서버 중지 실패: {ex.Message}"); }
         }
 
-        // 메시지 수신 (Async)
+        private void UpdateServerStatus(bool isRunning)
+        {
+            ServerStatusBar.Background = new SolidColorBrush(isRunning ? Colors.Green : Colors.Red);
+            ServerStatusText.Text = isRunning ? "Server Start" : "Server Stop";
+        }
+
+        private void AppendLog(string message)
+        {
+            if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(() => AppendLog(message)); return; }
+            LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n");
+            LogTextBox.ScrollToEnd();
+        }
+
+        // 메시지 수신 핸들러
         private async void TcpServer_OnMessageReceived(string clientId, BaseMessage message)
         {
-            string logMessage = FormatLogMessage(clientId, message, " [RECV]");
-            AppendLog(logMessage);
+            // 1. 로그인/회원가입/식별은 즉시 처리
+            if (message.msg == MsgType.CLIENT_IDENTIFY_REQ || message.msg == MsgType.LOGIN_REQ || message.msg == MsgType.ENROLL_REQ)
+            {
+                await RouteMessage(clientId, message);
+                return;
+            }
 
+            // 2. 로그 출력 (빈번한 STATUS_REQ 등 제외)
+            if (message.msg != MsgType.STATUS_REQ && message.msg != MsgType.LOGIN_RES)
+            {
+                string logMsg = FormatLogMessage(clientId, message, " [RECV]");
+                if (!string.IsNullOrEmpty(logMsg)) AppendLog(logMsg);
+            }
+
+            // 3. 그 외 메시지 라우팅 처리
             await RouteMessage(clientId, message);
         }
 
-        private string FormatLogMessage(string clientId, BaseMessage message, string direction = "")
-        {
-            string clientName = clientId.Split(':')[0];
-            string content = "";
-
-            switch (message.msg)
-            {
-                case MsgType.ENROLL_REQ:
-                    if (message is EnrollReq req1) content = $"회원가입 요청: {req1.id}";
-                    break;
-                case MsgType.ENROLL_RES:
-                    if (message is EnrollRes res1) content = $"회원가입 응답: {res1.registered}";
-                    break;
-                case MsgType.LOGIN_REQ:
-                    if (message is LoginReq req2) content = $"로그인 요청: {req2.id}";
-                    break;
-                case MsgType.LOGIN_RES:
-                    if (message is LoginRes res2) content = $"로그인 응답: {res2.logined}";
-                    break;
-                case MsgType.DOOR_REQ:
-                    if (message is DoorReq req3) content = $"문 제어 요청: {req3.door}";
-                    break;
-                case MsgType.DOOR_RES:
-                    if (message is DoorRes res3) content = $"문 제어 응답: {res3.door_status}";
-                    break;
-                case MsgType.STATUS_REQ:
-                    if (message is StatusReq req4) content = $"상태 요청: CarStatus={req4.car_status}";
-                    break;
-                case MsgType.STATUS_RES:
-                    if (message is StatusRes res4) content = $"상태 응답: Charging={res4.charging}, Battery={res4.battery}";
-                    break;
-                case MsgType.START_REQ:
-                case MsgType.TRUNK_REQ:
-                case MsgType.AIR_REQ:
-                case MsgType.CLI_REQ:
-                case MsgType.HEAT_REQ:
-                case MsgType.LIGHT_REQ:
-                case MsgType.CONTROL_REQ:
-                case MsgType.STOP_CHARGING_REQ:
-                    // 기타 요청 메시지 처리 (필요에 따라 구체화)
-                    content = $"제어 요청: {message.msg}";
-                    break;
-                default: content = $"[알 수 없는 메시지] Msg: {message.msg}"; break;
-            }
-
-            return $"{clientName}{direction} {content}";
-        }
-
-        // 메시지 라우팅 및 처리 (Async Task)
+        // 라우팅 및 로직 처리 (서버 로직 + 내 DB 연결)
         private async Task RouteMessage(string clientId, BaseMessage message)
         {
             BaseMessage? response = null;
@@ -171,35 +99,50 @@ namespace SERVER
             {
                 switch (message.msg)
                 {
-                    // [DB 연동] ENROLL_REQ
+                    // [서버 기능] 식별
+                    case MsgType.CLIENT_IDENTIFY_REQ:
+                        if (message is ClientIdentifyReq identifyReq)
+                        {
+                            string name = identifyReq.client_name ?? "Unknown";
+                            _tcpServer?.IdentifyClient(clientId, name);
+                            AppendLog($"[{name}] 식별됨 (ID: {clientId})");
+                            response = new ClientIdentifyRes { identified = true };
+                            targetClientId = clientId;
+                        }
+                        break;
+
+                    // [내 기능] 회원가입 (DB 연결)
                     case MsgType.ENROLL_REQ:
-                        if (message is EnrollReq enrollReq)
+                        if (message is EnrollReq enrollReq && _dbManager != null)
                         {
-                            int rowsAffected = await _dbManager.EnrollUserAsync(enrollReq);
-                            bool isEnrolled = rowsAffected > 0;
-
-                            AppendLog($"[DB RESULT] ENROLL: {rowsAffected} rows affected.");
-
-                            response = new EnrollRes { registered = isEnrolled };
+                            int result = await _dbManager.EnrollUserAsync(enrollReq);
+                            response = new EnrollRes { registered = (result > 0) };
                             targetClientId = clientId;
+                            AppendLog($"[DB] 회원가입 결과: {(result > 0 ? "성공" : "실패")}");
                         }
                         break;
 
-                    // [DB 연동] LOGIN_REQ
+                    // [내 기능] 로그인 (DB 연결) + [서버 기능] 식별
                     case MsgType.LOGIN_REQ:
-                        if (message is LoginReq loginReq)
+                        if (message is LoginReq loginReq && _dbManager != null)
                         {
-                            int loginCount = await _dbManager.LoginUserAsync(loginReq);
-                            bool isLogined = loginCount > 0;
-
-                            AppendLog($"[DB RESULT] LOGIN: Found {loginCount} user(s).");
-
-                            response = new LoginRes { logined = isLogined };
+                            int count = await _dbManager.LoginUserAsync(loginReq);
+                            bool success = count > 0;
+                            if (success)
+                            {
+                                _tcpServer?.IdentifyClient(clientId, "RCS"); // 로그인 성공 시 RCS로 식별
+                                AppendLog($"[RCS] 로그인 성공: {loginReq.id}");
+                            }
+                            else
+                            {
+                                AppendLog($"[Unknown] 로그인 실패: {loginReq.id}");
+                            }
+                            response = new LoginRes { logined = success };
                             targetClientId = clientId;
                         }
                         break;
 
-                    // 제어 요청 (DOBOTLAB으로 전달)
+                    // [서버 기능] 제어 메시지 전달 (RCS -> DOBOT)
                     case MsgType.START_REQ:
                     case MsgType.DOOR_REQ:
                     case MsgType.TRUNK_REQ:
@@ -208,13 +151,16 @@ namespace SERVER
                     case MsgType.HEAT_REQ:
                     case MsgType.LIGHT_REQ:
                     case MsgType.CONTROL_REQ:
-                    case MsgType.STATUS_REQ:
                     case MsgType.STOP_CHARGING_REQ:
-                        forward = message;
-                        targetClientId = _tcpServer?.GetClientByType("DOBOTLAB");
+                    case MsgType.STATUS_REQ:
+                        targetClientId = _tcpServer?.GetClientByType("DOBOT");
+                        if (targetClientId == null) targetClientId = _tcpServer?.GetClientByType("DOBOTLAB");
+
+                        if (targetClientId != null) forward = message;
+                        else if (message.msg != MsgType.STATUS_REQ) AppendLog($"[전달 실패] DOBOT 연결 안됨.");
                         break;
 
-                    // 제어 응답 (RCS로 전달)
+                    // [서버 기능] 응답 메시지 전달 (DOBOT -> RCS)
                     case MsgType.START_RES:
                     case MsgType.DOOR_RES:
                     case MsgType.TRUNK_RES:
@@ -223,10 +169,18 @@ namespace SERVER
                     case MsgType.HEAT_RES:
                     case MsgType.LIGHT_RES:
                     case MsgType.CONTROL_RES:
-                    case MsgType.STATUS_RES:
                     case MsgType.STOP_CHARGING_RES:
-                        forward = message;
+                    case MsgType.STATUS_RES:
                         targetClientId = _tcpServer?.GetClientByType("RCS");
+                        if (targetClientId != null)
+                        {
+                            if (message is ControlRes cRes && !string.IsNullOrEmpty(cRes.reason))
+                            {
+                                if (cRes.reason.Contains("주차")) cRes.parking = true;
+                                if (cRes.reason.Contains("출차")) cRes.driving = true;
+                            }
+                            forward = message;
+                        }
                         break;
                 }
 
@@ -235,58 +189,46 @@ namespace SERVER
                     await _tcpServer?.SendToClientAsync(targetClientId, response)!;
                     LogSend(targetClientId, response);
                 }
-
                 if (forward != null && targetClientId != null)
                 {
                     await _tcpServer?.SendToClientAsync(targetClientId, forward)!;
                     LogSend(targetClientId, forward);
                 }
-                else if (forward != null && targetClientId == null)
-                {
-                    string targetType = message.msg.ToString().EndsWith("_REQ") ? "DOBOTLAB" : "RCS";
-                    AppendLog($"[라우팅 실패] 메시지 {message.msg}를 전달할 대상({targetType})을 찾을 수 없습니다.");
-                }
             }
-            catch (Exception ex)
+            catch (Exception ex) { AppendLog($"[처리 오류] {ex.Message}"); }
+        }
+
+        private string FormatLogMessage(string clientId, BaseMessage message, string direction = "")
+        {
+            string clientType = _tcpServer?.GetClientType(clientId) ?? "Unknown";
+            string content = "";
+            switch (message.msg)
             {
-                // DB 연결 오류 등이 여기서 잡힙니다.
-                AppendLog($"[메시지 처리 오류] {ex.Message}");
+                case MsgType.ENROLL_REQ: if (message is EnrollReq er) content = $"회원가입: {er.id}"; break;
+                case MsgType.LOGIN_REQ: if (message is LoginReq lr) content = $"로그인: {lr.id}"; break;
+                case MsgType.START_REQ: if (message is StartReq sr) content = $"시동: {(sr.active ? "ON" : "OFF")}"; break;
+                case MsgType.DOOR_REQ: if (message is DoorReq dr) content = $"문: {(dr.door ? "Open" : "Close")}"; break;
+                case MsgType.CONTROL_REQ: if (message is ControlReq cr) content = $"주차: {(cr.control ? "주차" : "출차")}"; break;
+                case MsgType.STATUS_RES: if (message is StatusRes s) content = $"배터리: {s.battery}%"; break;
+                default: content = $"{message.msg}"; break;
             }
+            if (string.IsNullOrEmpty(content)) return "";
+            return $"[{clientType}]{direction} {content}";
         }
 
         private void LogSend(string clientId, BaseMessage message)
         {
-            string logMessage = FormatLogMessage(clientId, message, " [SEND]");
-            AppendLog(logMessage);
+            if (message.msg == MsgType.STATUS_REQ) return;
+            string logMsg = FormatLogMessage(clientId, message, " [SEND]");
+            if (!string.IsNullOrEmpty(logMsg)) AppendLog(logMsg);
         }
 
-        private void TcpServer_OnClientConnected(string clientId)
-        {
-            AppendLog("{RCS} 접속");
-        }
-
-        private void TcpServer_OnClientDisconnected(string clientId, string clientType)
-        {
-            // 클라이언트 타입에 따라 로그 표시
-            if (clientType == "RCS" || clientType == "Unknown")
-            {
-                AppendLog("{RCS} 로그아웃");
-            }
-            else
-            {
-                AppendLog($"{{{clientType}}} 연결 해제");
-            }
-        }
+        private void TcpServer_OnClientConnected(string clientId) => _tcpServer?.IdentifyClient(clientId, "Unknown");
+        private void TcpServer_OnClientDisconnected(string clientId, string type) => AppendLog($"[{type}] 연결 해제");
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            if (_tcpServer != null)
-            {
-                _tcpServer.OnMessageReceived -= TcpServer_OnMessageReceived;
-                _tcpServer.OnClientConnected -= TcpServer_OnClientConnected;
-                _tcpServer.OnClientDisconnected -= TcpServer_OnClientDisconnected;
-                try { _tcpServer.Stop(); } catch { }
-            }
+            if (_tcpServer != null) { _tcpServer.OnMessageReceived -= TcpServer_OnMessageReceived; try { _tcpServer.Stop(); } catch { } }
             base.OnClosing(e);
         }
     }

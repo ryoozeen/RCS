@@ -1,111 +1,93 @@
-﻿using SERVER.Protocol;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Threading; 
+using SERVER.Protocol; // BaseMessage 사용을 위해 필수
 
 namespace SERVER.Network
 {
     public class ClientHandler
     {
-        private readonly TcpClient _client;
-        private readonly CancellationToken _cancellationToken;
-        private readonly string _clientId; // 클라이언트 식별자 
+        private TcpClient _client;
+        private string _clientId;
+        private NetworkStream _stream;
 
+        // TcpServer에서 구독할 이벤트들
+        public event Action<BaseMessage>? OnMessageReceived;
+        public event Action? OnDisconnected;
 
-        private NetworkStream? _stream;
-
-        public string ClientType { get; set; } = "Unknown";
-
-        public event Action<string, BaseMessage>? OnMessageReceived;
-
-        public event Action<string>? OnClientDisconnected;
-
-        public ClientHandler(TcpClient client, CancellationToken cancellationToken)
+        public ClientHandler(TcpClient client, string clientId)
         {
             _client = client;
-            _cancellationToken = cancellationToken;
-
-            _clientId = _client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
+            _clientId = clientId;
+            _stream = client.GetStream();
         }
 
-        public async Task SendMessageAsync(BaseMessage message)
+        // 클라이언트와 데이터를 주고받는 메인 루프
+        public async Task RunAsync(CancellationToken ct)
         {
-            if (_stream == null || !_client.Connected)
-            {
-                return;
-            }
-
             try
             {
-                byte[] messageBytes = BaseMessage.SerializeMessage(message);
-
-                await _stream.WriteAsync(messageBytes, 0, messageBytes.Length, _cancellationToken);
-            }
-            catch (Exception)
-            {
-                // 전송 오류
-            }
-        }
-
-        public async Task HandleClientAsync()
-        {
-
-            try
-            {
-                _stream = _client.GetStream();
-
-                while (!_cancellationToken.IsCancellationRequested)
+                while (!ct.IsCancellationRequested && _client.Connected)
                 {
-                    try
-                    {
-                        BaseMessage? message = await BaseMessage.DeserializeMessageAsync(_stream, _cancellationToken);
+                    // Protocol.cs에 있는 DeserializeMessageAsync 사용
+                    // 스트림에서 메시지를 읽어서 BaseMessage 객체로 변환
+                    BaseMessage? message = await BaseMessage.DeserializeMessageAsync(_stream, ct);
 
-                        if (message == null)
-                        {
-                            break;
-                        }
-                        OnMessageReceived?.Invoke(_clientId, message);
-                    }
-                    catch (OperationCanceledException)
+                    if (message == null)
                     {
+                        // 연결이 끊기거나 잘못된 데이터 수신 시 종료
                         break;
                     }
-                    catch (Exception ex)
-                    {
 
-                        break;
-                    }
+                    // 메시지 수신 알림 (TcpServer로 전달됨)
+                    OnMessageReceived?.Invoke(message);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // 연결 오류
+                // 연결 종료 등의 일반적인 예외는 무시하거나 로그 출력
+                Console.WriteLine($"Client Loop Error ({_clientId}): {ex.Message}");
             }
             finally
             {
-                OnClientDisconnected?.Invoke(_clientId);
+                Disconnect();
+            }
+        }
 
-                try
-                {
-                    _stream?.Close();
-                }
-                catch { } // 무시
+        // 메시지 전송 (서버 -> 클라이언트)
+        public async Task SendMessageAsync(BaseMessage message)
+        {
+            if (!_client.Connected) return;
 
-                try
-                {
-                    _client?.Close();
-                }
-                catch { } // 무시
+            try
+            {
+                // Protocol.cs의 SerializeMessage 사용
+                byte[] packet = BaseMessage.SerializeMessage(message);
+                await _stream.WriteAsync(packet, 0, packet.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Send Error ({_clientId}): {ex.Message}");
+            }
+        }
 
-                try
+        // 연결 종료 처리
+        public void Disconnect()
+        {
+            try
+            {
+                if (_client.Connected)
                 {
-                    _client?.Dispose();
+                    _client.Close();
                 }
-                catch { } // 무시
+                // 연결 해제 사실을 TcpServer에 알림
+                OnDisconnected?.Invoke();
+            }
+            catch
+            {
+                // 이미 닫힌 경우 무시
             }
         }
     }
