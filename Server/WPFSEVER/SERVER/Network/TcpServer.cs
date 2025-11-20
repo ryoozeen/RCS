@@ -56,6 +56,14 @@ namespace SERVER.Network
             }
         }
 
+        public string GetClientType(string clientId)
+        {
+            if (_clientHandlers.TryGetValue(clientId, out ClientHandler? handler))
+            {
+                return handler.ClientType;
+            }
+            return "Unknown";
+        }
 
         public string? GetClientByType(string clientType)
         {

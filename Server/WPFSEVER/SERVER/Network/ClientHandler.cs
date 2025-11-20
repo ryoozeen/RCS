@@ -76,7 +76,12 @@ namespace SERVER.Network
                     }
                     catch (Exception ex)
                     {
-
+                        // 예외 발생 시 로그 출력을 위해 이벤트 발생
+                        OnMessageReceived?.Invoke(_clientId, new BaseMessage 
+                        { 
+                            msg = MsgType.STATUS_REQ, // 임시로 사용
+                            reason = $"[ERROR] {ex.Message}" 
+                        });
                         break;
                     }
                 }
