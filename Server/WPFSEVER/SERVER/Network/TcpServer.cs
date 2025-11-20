@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SERVER.Protocol;
-using System.Collections.Concurrent; 
+using System.Collections.Concurrent;
 
 namespace SERVER.Network
 {
@@ -23,12 +23,15 @@ namespace SERVER.Network
         // (Key: clientId, Value: ClientHandler)
         private readonly ConcurrentDictionary<string, ClientHandler> _clientHandlers = new ConcurrentDictionary<string, ClientHandler>();
 
+        // [추가] 클라이언트 타입 관리 (ID -> Type 문자열) : 원본 코드 유지하며 기능 추가를 위해 별도 딕셔너리 사용하지 않고 Handler 속성 활용
+        // (하지만 원본 Handler에 ClientType 속성이 있다는 가정하에 아래 IdentifyClient 등에서 활용)
+
         // 이벤트: 클라이언트로부터 메시지 수신 시 발생
         public event Action<string, BaseMessage>? OnMessageReceived;
-        
+
         // 이벤트: 클라이언트 연결 시 발생
         public event Action<string>? OnClientConnected;
-        
+
         // 이벤트: 클라이언트 연결 해제 시 발생 (clientId, clientType)
         public event Action<string, string>? OnClientDisconnected;
 
@@ -140,15 +143,15 @@ namespace SERVER.Network
                         {
                             clientType = disconnectedHandler.ClientType;
                         }
-                        
+
                         _clientHandlers.TryRemove(id, out _);
-                        
+
                         // 연결 해제 이벤트 발생
                         OnClientDisconnected?.Invoke(id, clientType);
                     };
 
                     _clientHandlers.TryAdd(clientId, handler);
-                    
+
                     // 클라이언트 연결 이벤트 발생
                     OnClientConnected?.Invoke(clientId);
 
@@ -158,7 +161,7 @@ namespace SERVER.Network
                 }
                 catch (OperationCanceledException)
                 {
-                   
+
                     break;
                 }
                 catch (ObjectDisposedException)

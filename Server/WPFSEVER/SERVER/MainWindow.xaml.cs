@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,11 +20,16 @@ namespace SERVER
     public partial class MainWindow : Window
     {
         private TcpServer? _tcpServer;
+        private DatabaseManager? _dbManager; // [추가됨] DB 매니저
         private const int Port = 7000;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // [추가됨] DB 연결 설정
+            string connectionString = "Server=localhost;Port=3306;Database=rcs;User=root;Password=1234;";
+            _dbManager = new DatabaseManager(connectionString);
 
             _tcpServer = new TcpServer(Port);
             _tcpServer.OnMessageReceived += TcpServer_OnMessageReceived;
@@ -98,34 +103,34 @@ namespace SERVER
                 AppendLog($"[ERROR] {clientId}: {message.reason}");
                 return;
             }
-            
+
             // CLIENT_IDENTIFY_REQ는 먼저 처리
             if (message.msg == MsgType.CLIENT_IDENTIFY_REQ)
             {
                 await RouteMessage(clientId, message);
                 return;
             }
-            
+
             // LOGIN_REQ는 RouteMessage에서 처리 (로그도 거기서 출력)
             if (message.msg == MsgType.LOGIN_REQ)
             {
                 await RouteMessage(clientId, message);
                 return;
             }
-            
+
             // STATUS_REQ와 LOGIN_RES는 로그 출력하지 않음
             if (message.msg == MsgType.STATUS_REQ || message.msg == MsgType.LOGIN_RES)
             {
                 await RouteMessage(clientId, message);
                 return;
             }
-            
+
             // 다른 메시지는 FormatLogMessage로 통일 처리
             string logMessage = FormatLogMessage(clientId, message, " [RECV]");
             // 빈 문자열인 경우 로그 출력하지 않음
             if (!string.IsNullOrEmpty(logMessage))
             {
-            AppendLog(logMessage);
+                AppendLog(logMessage);
             }
             await RouteMessage(clientId, message);
         }
@@ -134,7 +139,7 @@ namespace SERVER
         {
             // 클라이언트 타입 가져오기 (CLIENT_IDENTIFY_REQ에서 저장된 client_name 사용)
             string clientType = _tcpServer?.GetClientType(clientId) ?? "Unknown";
-            
+
             string content = "";
 
             switch (message.msg)
@@ -144,7 +149,7 @@ namespace SERVER
                     // CLIENT_IDENTIFY 메시지는 로그 출력하지 않음 (이미 RouteMessage에서 처리)
                     return "";
                 case MsgType.START_REQ:
-                    if (message is StartReq startReq) 
+                    if (message is StartReq startReq)
                     {
                         // 형식: {메시지("시동")}
                         content = startReq.reason ?? "시동";
@@ -167,7 +172,7 @@ namespace SERVER
                     break;
 
                 case MsgType.DOOR_REQ:
-                    if (message is DoorReq req3) 
+                    if (message is DoorReq req3)
                     {
                         string doorState = req3.door ? "열기" : "닫기";
                         content = $"문 제어 요청: {doorState} (door = {req3.door})";
@@ -185,7 +190,7 @@ namespace SERVER
                         content = controlReq.control ? "주차 요청" : "출차 요청";
                     }
                     break;
-                    
+
                 case MsgType.CONTROL_RES:
                     if (message is ControlRes controlRes)
                     {
@@ -209,7 +214,7 @@ namespace SERVER
                 case MsgType.STATUS_RES:
                     if (message is StatusRes res4) content = $"상태 응답: Charging={res4.charging}, Battery={res4.battery}";
                     break;
-                    
+
                 case MsgType.ENROLL_REQ:
                     if (message is EnrollReq enrollReq)
                     {
@@ -318,13 +323,13 @@ namespace SERVER
                     return "";
                 default: content = $"[알 수 없는 메시지] Msg: {message.msg}"; break;
             }
-            
+
             // 빈 content인 경우 로그 출력하지 않음
             if (string.IsNullOrEmpty(content))
             {
                 return "";
             }
-            
+
             // 형식: [{클라이언트 타입명}] {direction} {메시지}
             // direction이 있으면 포함, 없으면 생략
             if (!string.IsNullOrEmpty(direction))
@@ -354,11 +359,11 @@ namespace SERVER
                             string clientName = identifyReq.client_name ?? "Unknown";
                             // 클라이언트 타입 설정 (RCS 또는 DOBOT)
                             _tcpServer?.IdentifyClient(clientId, clientName);
-                            
+
                             // 로그 출력
                             AppendLog($"[{clientName}] 서버 연결 성공");
                             AppendLog($"[{clientName}] 접속");
-                            
+
                             // 응답 전송
                             response = new ClientIdentifyRes
                             {
@@ -368,26 +373,44 @@ namespace SERVER
                         }
                         break;
 
-                    case MsgType.LOGIN_REQ:
-                        // 로그인 요청 처리
-                        if (message is LoginReq loginReq)
+                    case MsgType.ENROLL_REQ:
+                        // [수정됨] 회원가입 요청 처리 (DB 연결)
+                        if (message is EnrollReq enrollReq && _dbManager != null)
                         {
-                            // 클라이언트 타입 가져오기 (CLIENT_IDENTIFY_REQ에서 저장된 client_name 사용)
+                            // DB에 회원가입 요청
+                            int result = await _dbManager.EnrollUserAsync(enrollReq);
+                            bool isRegistered = result > 0;
+
+                            // 로그 출력
+                            AppendLog($"[DB] 회원가입 요청 결과: {(isRegistered ? "성공" : "실패")} (ID: {enrollReq.id})");
+
+                            // 응답 전송
+                            response = new EnrollRes { registered = isRegistered };
+                            targetClientId = clientId;
+                        }
+                        break;
+
+                    case MsgType.LOGIN_REQ:
+                        // [수정됨] 로그인 요청 처리 (DB 연결)
+                        if (message is LoginReq loginReq && _dbManager != null)
+                        {
+                            // DB에서 로그인 확인
+                            int count = await _dbManager.LoginUserAsync(loginReq);
+                            bool loginSuccess = count > 0;
+
                             string clientType = _tcpServer?.GetClientType(clientId) ?? "Unknown";
-                            
-                            // DB 없으므로 간단한 검증 (id와 password가 비어있지 않으면 성공)
-                            bool loginSuccess = !string.IsNullOrEmpty(loginReq.id) && !string.IsNullOrEmpty(loginReq.password);
-                            
-                            // 로그인 성공/실패 로그 출력
+
+                            // 로그인 성공/실패 로그 출력 및 식별
                             if (loginSuccess)
                             {
-                                AppendLog($"[{clientType}] 로그인 성공");
+                                _tcpServer?.IdentifyClient(clientId, "RCS"); // 로그인 성공 시 RCS로 식별
+                                AppendLog($"[RCS] 로그인 성공: {loginReq.id}");
                             }
                             else
                             {
-                                AppendLog($"[{clientType}] 로그인 실패");
+                                AppendLog($"[{clientType}] 로그인 실패: {loginReq.id}");
                             }
-                            
+
                             // 로그인 응답 전송
                             response = new LoginRes
                             {
@@ -451,6 +474,7 @@ namespace SERVER
                         // DOBOT이 없으면 라우팅 실패 메시지 출력하지 않음
                         break;
 
+                    // 제어 응답 (RCS로 전달)
                     case MsgType.START_RES:
                         // START_RES는 DOBOTLAB에서 온 것이므로 클라이언트로 전달
                         forward = message;
@@ -469,11 +493,11 @@ namespace SERVER
                         {
                             if (!string.IsNullOrEmpty(controlResMsg.reason))
                             {
-                                if (controlResMsg.reason == "주차중...")
+                                if (controlResMsg.reason.Contains("주차"))
                                 {
                                     controlResMsg.parking = true;
                                 }
-                                else if (controlResMsg.reason == "출차중...")
+                                else if (controlResMsg.reason.Contains("출차"))
                                 {
                                     controlResMsg.driving = true;
                                 }
@@ -491,13 +515,13 @@ namespace SERVER
 
                 if (response != null && targetClientId != null)
                 {
-                    await _tcpServer.SendToClientAsync(targetClientId, response);
+                    await _tcpServer?.SendToClientAsync(targetClientId, response)!;
                     LogSend(targetClientId, response);
                 }
 
                 if (forward != null && targetClientId != null)
                 {
-                    await _tcpServer.SendToClientAsync(targetClientId, forward);
+                    await _tcpServer?.SendToClientAsync(targetClientId, forward)!;
                     LogSend(targetClientId, forward);
                 }
                 // STATUS_REQ와 DOBOTLAB으로 전달하는 REQ 메시지는 대상이 없어도 라우팅 실패 메시지 출력하지 않음
@@ -514,7 +538,7 @@ namespace SERVER
                                          message.msg == MsgType.LIGHT_REQ ||
                                          message.msg == MsgType.CONTROL_REQ ||
                                          message.msg == MsgType.STOP_CHARGING_REQ;
-                    
+
                     if (!isDobotlabReq)
                     {
                         string targetType = message.msg.ToString().EndsWith("_REQ") ? "DOBOTLAB" : "RCS";
@@ -524,6 +548,7 @@ namespace SERVER
             }
             catch (Exception ex)
             {
+                // DB 연결 오류 등이 여기서 잡힙니다.
                 AppendLog($"[메시지 처리 오류] {ex.Message}");
             }
         }
@@ -534,7 +559,7 @@ namespace SERVER
             // 빈 문자열인 경우 로그 출력하지 않음
             if (!string.IsNullOrEmpty(logMessage))
             {
-            AppendLog(logMessage);
+                AppendLog(logMessage);
             }
         }
 
