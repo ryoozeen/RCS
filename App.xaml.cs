@@ -18,8 +18,10 @@ namespace DotBotCarClient
 
             try
             {
-                await Network.ConnectAsync("10.10.21.122", 7000);
-                //await Network.ConnectAsync("10.10.21.107", 7000);
+                //await Network.ConnectAsync("10.10.21.122", 7000); // 명진
+                //await Network.ConnectAsync("10.10.21.107", 7000); // 연주
+                //await Network.ConnectAsync("10.10.21.111", 7000); // 진리
+                //await Network.ConnectAsync("10.10.21.101", 7000); // 유진
 
                 // 여기서 한번만 등록
                 Network.OnMessageReceived += Network_OnMessageReceived;

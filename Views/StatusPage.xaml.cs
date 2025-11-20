@@ -118,7 +118,6 @@ namespace DotBotCarClient.Views
             await App.Network.SendAsync(req);
         }
 
-
         // ======================================================
         // STATUS_RES 처리 (UI 업데이트)
         // ======================================================
