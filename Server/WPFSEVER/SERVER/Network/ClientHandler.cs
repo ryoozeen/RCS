@@ -62,18 +62,22 @@ namespace SERVER.Network
                 {
                     try
                     {
+                        // 메시지 수신 및 역직렬화
                         BaseMessage? message = await BaseMessage.DeserializeMessageAsync(_stream, _cancellationToken);
 
                         if (message == null)
                         {
                             break;
                         }
+
+                        // 메시지 수신 이벤트 발생
                         OnMessageReceived?.Invoke(_clientId, message);
                     }
                     catch (OperationCanceledException)
                     {
                         break;
                     }
+
                     catch (Exception ex)
                     {
                         // 예외 발생 시 로그 출력을 위해 이벤트 발생
@@ -83,7 +87,7 @@ namespace SERVER.Network
                             reason = $"[ERROR] {ex.Message}" 
                         });
                         break;
-                    }
+                    }                
                 }
             }
             catch (Exception)

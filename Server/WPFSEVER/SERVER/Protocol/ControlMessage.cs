@@ -50,14 +50,17 @@ namespace SERVER.Protocol
             CancellationToken cancellationToken)
         {
             const int MAX_MESSAGE_SIZE = 1024 * 100;
-            byte[] lengthBytes = new byte[4];
 
+            // 1. 길이 헤더 읽기 (4바이트)
+            byte[] lengthBytes = new byte[4];
             int bytesRead = await stream.ReadAsync(lengthBytes, 0, 4, cancellationToken);
             if (bytesRead != 4) return null;
 
+            // 2. 메시지 길이 파싱
             int messageLength = BitConverter.ToInt32(lengthBytes, 0);
             if (messageLength <= 0 || messageLength > MAX_MESSAGE_SIZE) return null;
 
+            // 3. 메시지 바디 읽기
             byte[] messageBytes = new byte[messageLength];
             int totalBytesRead = 0;
 
@@ -154,7 +157,7 @@ namespace SERVER.Protocol
             var options = new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase, // 클라이언트와 일치
+                // PropertyNamingPolicy 제거: client_name으로 통일 (snake_case 유지)
                 Converters = { new JsonStringEnumConverter() }
             };
 
