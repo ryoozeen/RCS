@@ -34,7 +34,7 @@ namespace SERVER.Network
                 cmd.Parameters.AddWithValue("@id", message.id);
                 cmd.Parameters.AddWithValue("@password", message.password);
                 cmd.Parameters.AddWithValue("@userName", message.username ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@carModel", message.carmodel ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@carModel", message.car_model ?? (object)DBNull.Value);
 
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
 
