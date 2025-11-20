@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,7 +20,7 @@ namespace SERVER
     public partial class MainWindow : Window
     {
         private TcpServer? _tcpServer;
-        private DatabaseManager? _dbManager; // [추가됨] DB 매니저
+        private DatabaseManager? _dbManager; 
         private const int Port = 7000;
 
         public MainWindow()
